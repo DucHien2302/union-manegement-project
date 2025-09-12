@@ -9,7 +9,7 @@ class AppConfig:
     DB_SERVER: str = os.getenv("DB_SERVER", "localhost")
     DB_NAME: str = os.getenv("DB_NAME", "UnionManagementDB")
     DB_USERNAME: str = os.getenv("DB_USERNAME", "sa")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "")
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "P@ssw0rd")
     DB_DRIVER: str = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
     
     # Application settings
@@ -35,11 +35,59 @@ class AppConfig:
     
     @classmethod
     def get_database_url(cls) -> str:
-        """Get complete database connection URL"""
-        return (
-            f"mssql+pyodbc://{cls.DB_USERNAME}:{cls.DB_PASSWORD}@"
-            f"{cls.DB_SERVER}/{cls.DB_NAME}?driver={cls.DB_DRIVER.replace(' ', '+')}"
-        )
+        """Get complete database connection URL for SQL Server"""
+        from urllib.parse import quote_plus
+        
+        # Kiểm tra nếu sử dụng Windows Authentication
+        if not cls.DB_USERNAME or not cls.DB_PASSWORD:
+            # Windows Authentication
+            driver_encoded = quote_plus(cls.DB_DRIVER)
+            return (
+                f"mssql+pyodbc://@{cls.DB_SERVER}/{cls.DB_NAME}?"
+                f"driver={driver_encoded}&"
+                f"Trusted_Connection=yes&"
+                f"TrustServerCertificate=yes"
+            )
+        else:
+            # SQL Server Authentication
+            password_encoded = quote_plus(cls.DB_PASSWORD)
+            driver_encoded = quote_plus(cls.DB_DRIVER)
+            
+            return (
+                f"mssql+pyodbc://{cls.DB_USERNAME}:{password_encoded}@"
+                f"{cls.DB_SERVER}/{cls.DB_NAME}?"
+                f"driver={driver_encoded}&"
+                f"TrustServerCertificate=yes&"
+                f"Encrypt=no"
+            )
+    
+    @classmethod
+    def get_database_url_without_db(cls) -> str:
+        """Get connection URL to master database (for creating database)"""
+        from urllib.parse import quote_plus
+        
+        # Kiểm tra nếu sử dụng Windows Authentication
+        if not cls.DB_USERNAME or not cls.DB_PASSWORD:
+            # Windows Authentication
+            driver_encoded = quote_plus(cls.DB_DRIVER)
+            return (
+                f"mssql+pyodbc://@{cls.DB_SERVER}/master?"
+                f"driver={driver_encoded}&"
+                f"Trusted_Connection=yes&"
+                f"TrustServerCertificate=yes"
+            )
+        else:
+            # SQL Server Authentication
+            password_encoded = quote_plus(cls.DB_PASSWORD)
+            driver_encoded = quote_plus(cls.DB_DRIVER)
+            
+            return (
+                f"mssql+pyodbc://{cls.DB_USERNAME}:{password_encoded}@"
+                f"{cls.DB_SERVER}/master?"
+                f"driver={driver_encoded}&"
+                f"TrustServerCertificate=yes&"
+                f"Encrypt=no"
+            )
     
     @classmethod
     def validate_config(cls) -> bool:

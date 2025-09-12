@@ -9,6 +9,10 @@ import os
 project_root = os.path.join(os.path.dirname(__file__), '..', '..')
 sys.path.insert(0, project_root)
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv(os.path.join(project_root, '.env'))
+
 # Import tuyệt đối
 from application.use_cases.member_management import MemberManagementUseCase
 from application.use_cases.report_management import ReportManagementUseCase  
@@ -27,11 +31,45 @@ class MainApplication:
         self.root.geometry("1200x800")
         self.root.state('zoomed')  # Maximized trên Windows
         
+        # Tạo status bar đầu tiên để tránh lỗi
+        self._create_minimal_status_bar()
+        
+        # Khởi tạo database trước
+        if not self._init_database_on_startup():
+            self.root.destroy()
+            return
+        
         # Khởi tạo use cases
         self._init_use_cases()
         
-        # Tạo giao diện
+        # Tạo giao diện đầy đủ
         self._create_widgets()
+    
+    def _create_minimal_status_bar(self):
+        """Tạo status bar tối thiểu để tránh lỗi"""
+        self.status_bar = ttk.Label(self.root, text="Đang khởi tạo...", relief=tk.SUNKEN)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+    
+    def _init_database_on_startup(self) -> bool:
+        """Khởi tạo database khi chạy ứng dụng"""
+        try:
+            from infrastructure.database.setup import init_database
+            print("🔧 Checking and initializing database...")
+            
+            if init_database():
+                print("✅ Database ready!")
+                return True
+            else:
+                messagebox.showerror("Lỗi Database", 
+                    "Không thể khởi tạo database!\n"
+                    "Vui lòng kiểm tra:\n"
+                    "1. SQL Server đang chạy\n"
+                    "2. Thông tin kết nối trong file .env\n"
+                    "3. Quyền tạo database")
+                return False
+        except Exception as e:
+            messagebox.showerror("Lỗi Database", f"Lỗi khởi tạo database: {e}")
+            return False
         
     def _init_use_cases(self):
         """Khởi tạo các use cases"""
@@ -74,9 +112,65 @@ class MainApplication:
         self._create_report_tab()
         self._create_task_tab()
         
-        # Status bar
-        self.status_bar = ttk.Label(self.root, text="Sẵn sàng", relief=tk.SUNKEN)
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        # Status bar với thêm thông tin
+        self._create_status_bar()
+    
+    def _create_status_bar(self):
+        """Tạo status bar với nhiều thông tin"""
+        # Xóa status bar tối thiểu nếu có
+        if hasattr(self, 'status_bar'):
+            self.status_bar.destroy()
+        
+        # Status bar frame
+        status_frame = ttk.Frame(self.root)
+        status_frame.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        # Main status label
+        self.status_bar = ttk.Label(status_frame, text="Sẵn sàng", relief=tk.SUNKEN)
+        self.status_bar.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        # Database status
+        self.db_status_label = ttk.Label(status_frame, text="", relief=tk.SUNKEN, width=15)
+        self.db_status_label.pack(side=tk.RIGHT, padx=(2, 0))
+        
+        # Time label
+        self.time_label = ttk.Label(status_frame, text="", relief=tk.SUNKEN, width=20)
+        self.time_label.pack(side=tk.RIGHT, padx=(2, 0))
+        
+        # Update time every second
+        self._update_status_time()
+        self._update_database_status()
+    
+    def _update_status_time(self):
+        """Cập nhật thời gian trên status bar"""
+        from datetime import datetime
+        current_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        self.time_label.config(text=current_time)
+        # Schedule next update
+        self.root.after(1000, self._update_status_time)
+    
+    def _update_database_status(self):
+        """Cập nhật trạng thái database"""
+        try:
+            from infrastructure.database.connection import db_manager
+            if db_manager.config.use_sqlite_fallback:
+                self.db_status_label.config(text="SQLite", foreground="orange")
+            else:
+                self.db_status_label.config(text="SQL Server", foreground="green")
+        except:
+            self.db_status_label.config(text="DB Error", foreground="red")
+    
+    def update_status(self, message: str, temp: bool = False):
+        """Cập nhật thông báo status bar
+        
+        Args:
+            message: Thông báo cần hiển thị
+            temp: Nếu True, sẽ tự động reset về "Sẵn sàng" sau 3 giây
+        """
+        if hasattr(self, 'status_bar') and self.status_bar.winfo_exists():
+            self.status_bar.config(text=message)
+            if temp:
+                self.root.after(3000, lambda: self.status_bar.config(text="Sẵn sàng") if hasattr(self, 'status_bar') and self.status_bar.winfo_exists() else None)
     
     def _create_menu(self):
         """Tạo menu bar"""
@@ -292,7 +386,7 @@ class MainApplication:
             self.task_stats_labels['Đang thực hiện'].config(text=f"Đang thực hiện: {task_stats['in_progress']}")
             self.task_stats_labels['Quá hạn'].config(text=f"Quá hạn: {task_stats['overdue']}")
             
-            self.status_bar.config(text="Đã cập nhật thống kê")
+            self.update_status("Đã cập nhật thống kê", temp=True)
         except Exception as e:
             messagebox.showerror("Lỗi", f"Không thể tải thống kê: {e}")
     
@@ -316,7 +410,7 @@ class MainApplication:
                     member.status.value
                 ))
             
-            self.status_bar.config(text=f"Đã tải {len(members)} thành viên")
+            self.update_status(f"Đã tải {len(members)} thành viên", temp=True)
         except Exception as e:
             messagebox.showerror("Lỗi", f"Không thể tải danh sách thành viên: {e}")
     
@@ -340,7 +434,7 @@ class MainApplication:
                     created_date
                 ))
             
-            self.status_bar.config(text=f"Đã tải {len(reports)} báo cáo")
+            self.update_status(f"Đã tải {len(reports)} báo cáo", temp=True)
         except Exception as e:
             messagebox.showerror("Lỗi", f"Không thể tải danh sách báo cáo: {e}")
     
@@ -365,7 +459,7 @@ class MainApplication:
                     f"{task.progress_percentage}%"
                 ))
             
-            self.status_bar.config(text=f"Đã tải {len(tasks)} công việc")
+            self.update_status(f"Đã tải {len(tasks)} công việc", temp=True)
         except Exception as e:
             messagebox.showerror("Lỗi", f"Không thể tải danh sách công việc: {e}")
     
