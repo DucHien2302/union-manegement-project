@@ -21,11 +21,11 @@ from infrastructure.repositories.report_repository_impl import ReportRepository
 from infrastructure.repositories.task_repository_impl import TaskRepository
 
 # Import UI components
-from presentation.gui.theme import ModernTheme, StyleManager
-from presentation.gui.dashboard_components import DashboardTab
-from presentation.gui.member_components import MemberTab, MemberActions, MemberForm
-from presentation.gui.report_components import ReportTab, ReportActions, ReportForm
-from presentation.gui.task_components import TaskTab, TaskActions, TaskForm
+from .theme import ModernTheme, StyleManager
+from .dashboard_components import DashboardTab
+from .member_components import MemberTab, MemberActions, MemberForm
+from .report_components import ReportTab, ReportActions, ReportForm
+from .task_components import TaskTab, TaskActions, TaskForm
 
 
 class MainApplication:
