@@ -4,6 +4,10 @@ import os
 # Thêm thư mục gốc của project vào Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 from sqlalchemy import create_engine
 from infrastructure.database.connection import Base, db_manager
 from infrastructure.database.models import MemberModel, ReportModel, TaskModel
