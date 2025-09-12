@@ -1,0 +1,64 @@
+import sys
+import os
+
+# Thêm thư mục gốc của project vào Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from sqlalchemy import create_engine
+from infrastructure.database.connection import Base, db_manager
+from infrastructure.database.models import MemberModel, ReportModel, TaskModel
+
+
+def create_tables():
+    """Tạo các bảng trong database"""
+    try:
+        engine = db_manager.get_engine()
+        
+        # Tạo tất cả các bảng
+        Base.metadata.create_all(engine)
+        print("✅ Database tables created successfully!")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error creating tables: {e}")
+        return False
+
+
+def drop_tables():
+    """Xóa tất cả các bảng (sử dụng cẩn thận!)"""
+    try:
+        engine = db_manager.get_engine()
+        
+        # Xóa tất cả các bảng
+        Base.metadata.drop_all(engine)
+        print("⚠️ All tables dropped!")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error dropping tables: {e}")
+        return False
+
+
+def init_database():
+    """Khởi tạo database và tạo các bảng"""
+    print("🔧 Initializing database...")
+    
+    # Test kết nối
+    if not db_manager.test_connection():
+        print("❌ Database connection failed!")
+        return False
+    
+    print("✅ Database connection successful!")
+    
+    # Tạo các bảng
+    if create_tables():
+        print("🎉 Database initialization completed!")
+        return True
+    else:
+        print("❌ Database initialization failed!")
+        return False
+
+
+if __name__ == "__main__":
+    # Chạy script này để khởi tạo database
+    init_database()

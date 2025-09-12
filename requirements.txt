@@ -1,0 +1,32 @@
+# Union Management System Requirements
+
+# Core frameworks
+sqlalchemy>=2.0.25
+# pyodbc==5.0.1  # Có vấn đề với Python 3.13, thay thế bằng alternative driver
+pymssql>=2.1.5  # Alternative SQL Server driver
+
+# GUI (Tkinter is included with Python)
+# For alternative GUI framework:
+# PyQt6==6.6.0
+# PySide6==6.6.0
+
+# Database drivers
+# Microsoft ODBC Driver for SQL Server should be installed separately
+
+# Development tools (optional)
+pytest==7.4.3
+pytest-cov==4.1.0
+black==23.11.0
+flake8==6.1.0
+
+# Documentation (optional)
+sphinx==7.2.6
+
+# Environment management
+python-dotenv==1.0.0
+
+# Date and time utilities
+python-dateutil==2.8.2
+
+# Data validation (optional)
+pydantic>=2.8.0
