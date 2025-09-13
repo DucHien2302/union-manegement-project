@@ -17,10 +17,13 @@ class ModernTheme:
     
     SECONDARY = "#10b981"    # Green
     SECONDARY_LIGHT = "#34d399"
+    SUCCESS = "#10b981"      # Green (alias for success)
     
     ACCENT = "#8b5cf6"       # Purple
     WARNING = "#f59e0b"      # Amber
     DANGER = "#ef4444"       # Red
+    ERROR = "#ef4444"        # Red (alias for error)
+    INFO = "#3b82f6"         # Blue (alias for info)
     
     # Neutrals
     WHITE = "#ffffff"
