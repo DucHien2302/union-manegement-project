@@ -34,7 +34,7 @@ class MemberTable:
         
         # Configure table style
         style = ttk.Style()
-        style.configure("Treeview", font=("Arial", 11))
+        style.configure("Treeview", font=("Arial", 11), rowheight=30)
         style.configure("Treeview.Heading", font=("Arial", 11, "bold"))
         
         tree, container = BaseTable.create_modern_table(parent, columns, column_widths)
@@ -66,7 +66,7 @@ class MemberTable:
         
         # Create treeview với chiều cao lớn hơn và font size lớn hơn
         style = ttk.Style()
-        style.configure("Treeview", font=("Arial", 11))
+        style.configure("Treeview", font=("Arial", 11), rowheight=30)
         style.configure("Treeview.Heading", font=("Arial", 11, "bold"))
         
         tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
