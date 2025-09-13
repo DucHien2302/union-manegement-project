@@ -1,3 +1,7 @@
+"""
+Database setup script cho Union Management System
+Chỉ hỗ trợ PostgreSQL database
+"""
 import sys
 import os
 
@@ -44,22 +48,22 @@ def drop_tables():
 
 
 def init_database():
-    """Khởi tạo database và tạo các bảng"""
-    print("🔧 Initializing database...")
+    """Khởi tạo PostgreSQL database và tạo các bảng"""
+    print("🔧 Initializing PostgreSQL database...")
     
     # Test kết nối
     if not db_manager.test_connection():
-        print("❌ Database connection failed!")
+        print("❌ PostgreSQL database connection failed!")
         return False
     
-    print("✅ Database connection successful!")
+    print("✅ PostgreSQL database connection successful!")
     
     # Tạo các bảng
     if create_tables():
-        print("🎉 Database initialization completed!")
+        print("🎉 PostgreSQL database initialization completed!")
         return True
     else:
-        print("❌ Database initialization failed!")
+        print("❌ PostgreSQL database initialization failed!")
         return False
 
 

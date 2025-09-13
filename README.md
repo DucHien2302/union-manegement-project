@@ -48,14 +48,13 @@ Hệ thống được xây dựng theo nguyên tắc Clean Architecture với c�
 
 ### Phần mềm cần thiết
 - Python 3.8+
-- SQL Server 2017+
-- Microsoft ODBC Driver 17 for SQL Server
+- PostgreSQL 12+
 - Spyder IDE (khuyến nghị)
 
 ### Python packages
 Xem file `requirements.txt` để biết danh sách đầy đủ. Các package chính:
 - `sqlalchemy` - ORM cho database
-- `pyodbc` - SQL Server driver
+- `psycopg2-binary` - PostgreSQL driver
 - `tkinter` - GUI framework (có sẵn với Python)
 
 ## Cài đặt và chạy
@@ -72,10 +71,11 @@ pip install -r requirements.txt
    ```
 
 2. Cập nhật thông tin database trong file `.env`:
-   ```
-   DB_SERVER=localhost
-   DB_NAME=UnionManagementDB
-   DB_USERNAME=sa
+   ```env
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=union_management
+   DB_USERNAME=postgres
    DB_PASSWORD=your_password
    ```
 

@@ -1,3 +1,7 @@
+"""
+SQLAlchemy models cho Union Management System
+Chỉ hỗ trợ PostgreSQL database
+"""
 from sqlalchemy import Column, Integer, String, DateTime, Text, Enum as SQLEnum, Float
 from sqlalchemy.sql import func
 from infrastructure.database.connection import Base
