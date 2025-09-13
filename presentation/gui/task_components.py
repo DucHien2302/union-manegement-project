@@ -117,7 +117,8 @@ class TaskTab:
                             pady=(0, ModernTheme.PADDING_MEDIUM))
         
         # Create task table
-        task_tree, _ = TaskTable.create_task_table(table_container)
+        task_tree, tree_container = TaskTable.create_task_table(table_container)
+        tree_container.pack(fill=tk.BOTH, expand=True)
         
         return task_frame, task_tree, filter_vars
 
@@ -316,14 +317,19 @@ class TaskActions:
         
         # Add tasks with styling
         for task in tasks:
+            # Format priority and status for better display
+            priority_str = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+            status_str = task.status.value if hasattr(task.status, 'value') else str(task.status)
+            
+            # Format date and progress
             due_date = task.due_date.strftime('%d/%m/%Y') if hasattr(task, 'due_date') and task.due_date else ''
             progress = f"{task.progress_percentage}%" if hasattr(task, 'progress_percentage') else "0%"
             
             item_id = tree.insert('', 'end', values=(
                 task.id,
-                task.title,
-                task.priority.value if hasattr(task.priority, 'value') else task.priority,
-                task.status.value if hasattr(task.status, 'value') else task.status,
+                task.title or "",
+                priority_str,
+                status_str,
                 task.assigned_to or '',
                 due_date,
                 progress
@@ -340,22 +346,22 @@ class TaskActions:
         
         # Priority-based styling
         if priority == "Khẩn cấp":
-            tree.set(item_id, tags=('high_priority',))
+            tree.item(item_id, tags=('high_priority',))
         elif priority == "Cao":
-            tree.set(item_id, tags=('high_priority',))
+            tree.item(item_id, tags=('high_priority',))
         elif priority == "Trung bình":
-            tree.set(item_id, tags=('medium_priority',))
+            tree.item(item_id, tags=('medium_priority',))
         elif priority == "Thấp":
-            tree.set(item_id, tags=('low_priority',))
+            tree.item(item_id, tags=('low_priority',))
         
         # Status-based styling (overrides priority for certain statuses)
         if status == "Hoàn thành":
-            tree.set(item_id, tags=('completed',))
+            tree.item(item_id, tags=('completed',))
         elif hasattr(task, 'due_date') and task.due_date:
             # Check if overdue
             from datetime import datetime
             if task.due_date < datetime.now() and status != "Hoàn thành":
-                tree.set(item_id, tags=('overdue',))
+                tree.item(item_id, tags=('overdue',))
     
     @staticmethod
     def get_selected_task_id(tree: ttk.Treeview) -> Optional[int]:
