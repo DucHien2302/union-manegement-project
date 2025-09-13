@@ -109,7 +109,8 @@ class ReportTab:
                             pady=(0, ModernTheme.PADDING_MEDIUM))
         
         # Create report table
-        report_tree, _ = ReportTable.create_report_table(table_container)
+        report_tree, tree_container = ReportTable.create_report_table(table_container)
+        tree_container.pack(fill=tk.BOTH, expand=True)
         
         return report_frame, report_tree, filter_vars
 
@@ -292,13 +293,19 @@ class ReportActions:
         
         # Add reports
         for report in reports:
+            # Format report type and status for better display
+            report_type_str = report.report_type.value if hasattr(report.report_type, 'value') else str(report.report_type)
+            status_str = report.status.value if hasattr(report.status, 'value') else str(report.status)
+            
+            # Format date
             created_date = report.created_at.strftime('%d/%m/%Y') if hasattr(report, 'created_at') and report.created_at else ''
+            
             tree.insert('', 'end', values=(
                 report.id,
-                report.title,
-                report.report_type.value if hasattr(report.report_type, 'value') else report.report_type,
-                report.period,
-                report.status.value if hasattr(report.status, 'value') else report.status,
+                report.title or "",
+                report_type_str,
+                report.period or "",
+                status_str,
                 created_date
             ))
     

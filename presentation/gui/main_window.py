@@ -232,8 +232,9 @@ class MainApplication:
         )
         self.notebook.add(task_frame, text="✅ Công việc")
         
-        # Load initial data
-        self._load_initial_data()
+        # Schedule data loading after GUI is ready (only once)
+        self._data_loaded = False
+        self.root.after(100, self._load_initial_data_once)
     
     def _create_status_bar(self):
         """Tạo status bar hiện đại"""
@@ -266,8 +267,8 @@ class MainApplication:
         # Update status
         self.update_status("Hệ thống sẵn sàng")
         
-        # Refresh dashboard after startup
-        self.root.after(500, self._refresh_dashboard)
+        # Schedule dashboard refresh after initial data loading
+        self.root.after(600, self._refresh_dashboard)
     
     def update_status(self, message: str, temp: bool = False):
         """Cập nhật status bar"""
@@ -277,6 +278,12 @@ class MainApplication:
                 self.root.after(3000, lambda: self.update_status("Sẵn sàng"))
     
     # Data loading methods
+    def _load_initial_data_once(self):
+        """Load initial data for all tabs (only once)"""
+        if not self._data_loaded:
+            self._data_loaded = True
+            self._load_initial_data()
+    
     def _load_initial_data(self):
         """Load initial data for all tabs"""
         self._refresh_members()
@@ -295,19 +302,27 @@ class MainApplication:
     def _refresh_reports(self):
         """Làm mới danh sách báo cáo"""
         try:
+            print("🔄 Loading reports...")
             self.all_reports = self.report_use_case.get_all_reports()
+            print(f"📊 Found {len(self.all_reports)} reports")
             ReportActions.populate_report_tree(self.report_tree, self.all_reports)
+            print("✅ Report tree populated")
             self.update_status(f"Đã tải {len(self.all_reports)} báo cáo", temp=True)
         except Exception as e:
+            print(f"❌ Error loading reports: {e}")
             messagebox.showerror("Lỗi", f"Không thể tải danh sách báo cáo: {e}")
     
     def _refresh_tasks(self):
         """Làm mới danh sách công việc"""
         try:
+            print("🔄 Loading tasks...")
             self.all_tasks = self.task_use_case.get_all_tasks()
+            print(f"📊 Found {len(self.all_tasks)} tasks")
             TaskActions.populate_task_tree(self.task_tree, self.all_tasks)
+            print("✅ Task tree populated")
             self.update_status(f"Đã tải {len(self.all_tasks)} công việc", temp=True)
         except Exception as e:
+            print(f"❌ Error loading tasks: {e}")
             messagebox.showerror("Lỗi", f"Không thể tải danh sách công việc: {e}")
     
     def _refresh_dashboard(self):
@@ -474,7 +489,9 @@ class MainApplication:
     # Header action methods
     def _refresh_all_data(self):
         """Làm mới tất cả dữ liệu"""
-        self._load_initial_data()
+        self._refresh_members()
+        self._refresh_reports()
+        self._refresh_tasks()
         self._refresh_dashboard()
         self.update_status("Đã làm mới tất cả dữ liệu", temp=True)
     

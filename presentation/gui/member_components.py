@@ -105,7 +105,8 @@ class MemberTab:
                             pady=(0, ModernTheme.PADDING_MEDIUM))
         
         # Create member table
-        member_tree, _ = MemberTable.create_member_table(table_container)
+        member_tree, tree_container = MemberTable.create_member_table(table_container)
+        tree_container.pack(fill=tk.BOTH, expand=True)
         
         return member_frame, member_tree, search_var
 
@@ -259,16 +260,36 @@ class MemberActions:
         for item in tree.get_children():
             tree.delete(item)
         
+        # Mapping for user-friendly display
+        member_type_display = {
+            'union_member': 'Đoàn viên',
+            'association_member': 'Hội viên', 
+            'executive': 'Cán bộ'
+        }
+        
+        status_display = {
+            'active': 'Hoạt động',
+            'inactive': 'Tạm dừng',
+            'suspended': 'Nghỉ'
+        }
+        
         # Add members
         for member in members:
+            member_type_str = member.member_type.value if hasattr(member.member_type, 'value') else str(member.member_type)
+            status_str = member.status.value if hasattr(member.status, 'value') else str(member.status)
+            
+            # Convert to user-friendly display
+            member_type_display_str = member_type_display.get(member_type_str, member_type_str)
+            status_display_str = status_display.get(status_str, status_str)
+            
             tree.insert('', 'end', values=(
                 member.id,
                 member.member_code,
                 member.full_name,
-                member.member_type.value if hasattr(member.member_type, 'value') else member.member_type,
-                member.position,
-                member.department,
-                member.status.value if hasattr(member.status, 'value') else member.status
+                member_type_display_str,
+                member.position or "",
+                member.department or "",
+                status_display_str
             ))
     
     @staticmethod
