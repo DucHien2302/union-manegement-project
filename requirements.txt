@@ -1,17 +1,17 @@
 # Union Management System Requirements
+# Chỉ hỗ trợ PostgreSQL database
 
 # Core frameworks
 sqlalchemy>=2.0.25
-# pyodbc==5.0.1  # Có vấn đề với Python 3.13, thay thế bằng alternative driver
-pymssql>=2.1.5  # Alternative SQL Server driver
+psycopg2-binary
 
 # GUI (Tkinter is included with Python)
 # For alternative GUI framework:
 # PyQt6==6.6.0
 # PySide6==6.6.0
 
-# Database drivers
-# Microsoft ODBC Driver for SQL Server should be installed separately
+# Database drivers (PostgreSQL only)
+# Note: SQLite support has been removed - only PostgreSQL is supported
 
 # Development tools (optional)
 pytest==7.4.3

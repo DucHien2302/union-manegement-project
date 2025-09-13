@@ -3,14 +3,14 @@ from typing import Optional
 
 
 class AppConfig:
-    """Cấu hình ứng dụng"""
+    """Cấu hình ứng dụng - chỉ sử dụng PostgreSQL"""
     
-    # Database settings
-    DB_SERVER: str = os.getenv("DB_SERVER", "localhost")
-    DB_NAME: str = os.getenv("DB_NAME", "UnionManagementDB")
-    DB_USERNAME: str = os.getenv("DB_USERNAME", "sa")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "P@ssw0rd")
-    DB_DRIVER: str = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
+    # PostgreSQL settings (duy nhất database được hỗ trợ)
+    DB_HOST: str = os.getenv("DB_HOST", "localhost")
+    DB_PORT: str = os.getenv("DB_PORT", "5432")
+    DB_NAME: str = os.getenv("DB_NAME", "union_management")
+    DB_USERNAME: str = os.getenv("DB_USERNAME", "postgres")
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "postgres")
     
     # Application settings
     APP_NAME: str = os.getenv("APP_NAME", "Union Management System")
@@ -35,65 +35,24 @@ class AppConfig:
     
     @classmethod
     def get_database_url(cls) -> str:
-        """Get complete database connection URL for SQL Server"""
-        from urllib.parse import quote_plus
-        
-        # Kiểm tra nếu sử dụng Windows Authentication
-        if not cls.DB_USERNAME or not cls.DB_PASSWORD:
-            # Windows Authentication
-            driver_encoded = quote_plus(cls.DB_DRIVER)
-            return (
-                f"mssql+pyodbc://@{cls.DB_SERVER}/{cls.DB_NAME}?"
-                f"driver={driver_encoded}&"
-                f"Trusted_Connection=yes&"
-                f"TrustServerCertificate=yes"
-            )
-        else:
-            # SQL Server Authentication
-            password_encoded = quote_plus(cls.DB_PASSWORD)
-            driver_encoded = quote_plus(cls.DB_DRIVER)
-            
-            return (
-                f"mssql+pyodbc://{cls.DB_USERNAME}:{password_encoded}@"
-                f"{cls.DB_SERVER}/{cls.DB_NAME}?"
-                f"driver={driver_encoded}&"
-                f"TrustServerCertificate=yes&"
-                f"Encrypt=no"
-            )
+        """Get complete database connection URL for PostgreSQL"""
+        return (
+            f"postgresql+psycopg2://{cls.DB_USERNAME}:{cls.DB_PASSWORD}@{cls.DB_HOST}:{cls.DB_PORT}/{cls.DB_NAME}"
+        )
     
     @classmethod
     def get_database_url_without_db(cls) -> str:
-        """Get connection URL to master database (for creating database)"""
-        from urllib.parse import quote_plus
-        
-        # Kiểm tra nếu sử dụng Windows Authentication
-        if not cls.DB_USERNAME or not cls.DB_PASSWORD:
-            # Windows Authentication
-            driver_encoded = quote_plus(cls.DB_DRIVER)
-            return (
-                f"mssql+pyodbc://@{cls.DB_SERVER}/master?"
-                f"driver={driver_encoded}&"
-                f"Trusted_Connection=yes&"
-                f"TrustServerCertificate=yes"
-            )
-        else:
-            # SQL Server Authentication
-            password_encoded = quote_plus(cls.DB_PASSWORD)
-            driver_encoded = quote_plus(cls.DB_DRIVER)
-            
-            return (
-                f"mssql+pyodbc://{cls.DB_USERNAME}:{password_encoded}@"
-                f"{cls.DB_SERVER}/master?"
-                f"driver={driver_encoded}&"
-                f"TrustServerCertificate=yes&"
-                f"Encrypt=no"
-            )
+        """Get connection URL to PostgreSQL server without database (for creating database)"""
+        return (
+            f"postgresql+psycopg2://{cls.DB_USERNAME}:{cls.DB_PASSWORD}@{cls.DB_HOST}:{cls.DB_PORT}/postgres"
+        )
     
     @classmethod
     def validate_config(cls) -> bool:
         """Validate configuration settings"""
         required_settings = [
-            cls.DB_SERVER,
+            cls.DB_HOST,
+            cls.DB_PORT,
             cls.DB_NAME,
             cls.DB_USERNAME,
             cls.DB_PASSWORD

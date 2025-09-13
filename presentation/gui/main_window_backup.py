@@ -392,10 +392,8 @@ class MainApplication:
         """Cập nhật trạng thái database"""
         try:
             from infrastructure.database.connection import db_manager
-            if db_manager.config.use_sqlite_fallback:
-                self.db_status_label.config(text="SQLite", foreground="orange")
-            else:
-                self.db_status_label.config(text="SQL Server", foreground="green")
+            # Chỉ hỗ trợ PostgreSQL
+            self.db_status_label.config(text="PostgreSQL", foreground="green")
         except:
             self.db_status_label.config(text="DB Error", foreground="red")
     

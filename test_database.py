@@ -1,54 +1,67 @@
 #!/usr/bin/env python3
 """
-Test database connection và truy vấn dữ liệu
+Test PostgreSQL database connection và truy vấn dữ liệu
+Chỉ hỗ trợ PostgreSQL - SQLite đã được loại bỏ
 """
 import os
 import sys
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
+sys.path.append(os.path.dirname(__file__))
+
+from dotenv import load_dotenv
+load_dotenv()
+
+from sqlalchemy import text
+from infrastructure.database.connection import db_manager
 
 def test_database():
-    """Test kết nối và truy vấn database"""
+    """Test kết nối và truy vấn PostgreSQL database"""
     
     try:
-        # Kết nối đến database
-        db_path = os.path.join(os.path.dirname(__file__), 'data', 'union_management.db')
-        database_url = f"sqlite:///{db_path}"
+        # Test kết nối PostgreSQL
+        if not db_manager.test_connection():
+            print("❌ Không thể kết nối PostgreSQL database")
+            return False
         
-        engine = create_engine(database_url)
-        Session = sessionmaker(bind=engine)
-        session = Session()
+        session = db_manager.get_session()
+        print("🔗 Kết nối PostgreSQL database thành công!")
         
-        print("🔗 Kết nối database thành công!")
-        
-        # Test query members
+        # Test query members với schema mới
         print("\n👥 Danh sách thành viên:")
-        result = session.execute(text("SELECT member_id, name, email, member_type, status FROM members"))
-        for row in result:
-            print(f"  - {row.member_id}: {row.name} ({row.email}) - {row.member_type} - {row.status}")
+        try:
+            result = session.execute(text("SELECT id, member_code, full_name, email, member_type, status FROM members LIMIT 5"))
+            for row in result:
+                print(f"  - {row.id}: {row.member_code} - {row.full_name} ({row.email}) - {row.member_type} - {row.status}")
+        except Exception as e:
+            print(f"  Chưa có thành viên nào: {e}")
         
-        # Test query tasks
+        # Test query tasks với schema mới
         print("\n📋 Danh sách công việc:")
-        result = session.execute(text("SELECT task_id, title, priority, status, assigned_to FROM tasks"))
-        for row in result:
-            print(f"  - {row.task_id}: {row.title} - {row.priority} - {row.status} - Assigned: {row.assigned_to}")
+        try:
+            result = session.execute(text("SELECT id, title, priority, status, assigned_to FROM tasks LIMIT 5"))
+            for row in result:
+                print(f"  - {row.id}: {row.title} - {row.priority} - {row.status} - Assigned: {row.assigned_to}")
+        except Exception as e:
+            print(f"  Chưa có công việc nào: {e}")
         
-        # Test query reports
+        # Test query reports với schema mới
         print("\n📊 Danh sách báo cáo:")
-        result = session.execute(text("SELECT report_id, title, report_type, status, author_id FROM reports"))
-        for row in result:
-            print(f"  - {row.report_id}: {row.title} - {row.report_type} - {row.status} - Author: {row.author_id}")
+        try:
+            result = session.execute(text("SELECT id, title, report_type, status FROM reports LIMIT 5"))
+            for row in result:
+                print(f"  - {row.id}: {row.title} - {row.report_type} - {row.status}")
+        except Exception as e:
+            print(f"  Chưa có báo cáo nào: {e}")
         
         session.close()
-        print("\n✅ Test database thành công!")
+        print("\n✅ Test PostgreSQL database thành công!")
         return True
         
     except Exception as e:
-        print(f"❌ Lỗi test database: {e}")
+        print(f"❌ Lỗi test PostgreSQL database: {e}")
         return False
 
 
 if __name__ == "__main__":
-    print("🧪 Test Database Connection")
-    print("=" * 30)
+    print("🧪 Test PostgreSQL Database Connection")
+    print("=" * 35)
     test_database()
