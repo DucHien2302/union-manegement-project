@@ -1,7 +1,9 @@
 """
 Dashboard Components
 Specialized components for the dashboard tab including statistics cards,
-quick actions, and recent activities
+quick actions, and recent ac        content = tk.Frame(card, bg=ModernTheme.WHITE)
+        content.pack(fill=tk.BOTH, expand=True, padx=ModernTheme.PADDING_MEDIUM, 
+                    pady=ModernTheme.PADDING_SMALL)ities
 """
 
 import tkinter as tk
@@ -42,21 +44,21 @@ class DashboardStatsCard:
         header = tk.Frame(content, bg=ModernTheme.WHITE)
         header.pack(fill=tk.X)
         
-        icon_label = tk.Label(header, text=icon, font=("Segoe UI", 24),
+        icon_label = tk.Label(header, text=icon, font=("Segoe UI", 20),
                              bg=ModernTheme.WHITE, fg=color)
         icon_label.pack(side=tk.LEFT)
         
-        title_label = tk.Label(header, text=title, font=ModernTheme.FONT_SUBHEADING,
+        title_label = tk.Label(header, text=title, font=("Segoe UI", 12, "bold"),
                               bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700)
         title_label.pack(side=tk.RIGHT)
         
         # Main number
-        number_label = tk.Label(content, text="0", font=("Segoe UI", 32, "bold"),
+        number_label = tk.Label(content, text="0", font=("Segoe UI", 28, "bold"),
                                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_900)
-        number_label.pack(anchor=tk.W, pady=(ModernTheme.PADDING_MEDIUM, 0))
+        number_label.pack(anchor=tk.W, pady=(ModernTheme.PADDING_SMALL, 0))
         
         # Subtitle
-        subtitle_label = tk.Label(content, text="Tổng số", font=ModernTheme.FONT_SMALL,
+        subtitle_label = tk.Label(content, text="Tổng số", font=("Segoe UI", 9),
                                  bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
         subtitle_label.pack(anchor=tk.W)
         
@@ -101,7 +103,7 @@ class DashboardQuickActions:
         
         # Title
         title_label = tk.Label(actions_container, text="Thao tác nhanh", 
-                              font=ModernTheme.FONT_HEADING,
+                              font=("Segoe UI", 14, "bold"),
                               bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900)
         title_label.pack(anchor=tk.W, pady=(0, ModernTheme.PADDING_MEDIUM))
         
@@ -128,21 +130,21 @@ class DashboardQuickActions:
         
         # Card content
         content = tk.Frame(card, bg=ModernTheme.WHITE)
-        content.pack(fill=tk.BOTH, expand=True, padx=ModernTheme.PADDING_LARGE, 
+        content.pack(fill=tk.BOTH, expand=True, padx=ModernTheme.PADDING_MEDIUM, 
                     pady=ModernTheme.PADDING_MEDIUM)
         
         # Icon
-        icon_label = tk.Label(content, text=icon, font=("Segoe UI", 20),
+        icon_label = tk.Label(content, text=icon, font=("Segoe UI", 16),
                              bg=ModernTheme.WHITE, fg=ModernTheme.PRIMARY)
         icon_label.pack(anchor=tk.W)
         
         # Title
-        title_label = tk.Label(content, text=title, font=ModernTheme.FONT_SUBHEADING,
+        title_label = tk.Label(content, text=title, font=("Segoe UI", 11, "bold"),
                               bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_900)
         title_label.pack(anchor=tk.W, pady=(4, 0))
         
         # Subtitle
-        subtitle_label = tk.Label(content, text=subtitle, font=ModernTheme.FONT_SMALL,
+        subtitle_label = tk.Label(content, text=subtitle, font=("Segoe UI", 9),
                                  bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
         subtitle_label.pack(anchor=tk.W)
         
@@ -185,7 +187,7 @@ class DashboardRecentActivities:
         
         # Title
         title_label = tk.Label(activities_container, text="Hoạt động gần đây", 
-                              font=ModernTheme.FONT_HEADING,
+                              font=("Segoe UI", 14, "bold"),
                               bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900)
         title_label.pack(anchor=tk.W, pady=(0, ModernTheme.PADDING_MEDIUM))
         
@@ -209,18 +211,18 @@ class DashboardRecentActivities:
         activity_row = tk.Frame(parent, bg=ModernTheme.WHITE)
         activity_row.pack(fill=tk.X, pady=4)
         
-        icon_label = tk.Label(activity_row, text=icon, font=("Segoe UI", 14),
+        icon_label = tk.Label(activity_row, text=icon, font=("Segoe UI", 12),
                              bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_600)
         icon_label.pack(side=tk.LEFT, padx=(0, 12))
         
         text_frame = tk.Frame(activity_row, bg=ModernTheme.WHITE)
         text_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
-        activity_label = tk.Label(text_frame, text=activity, font=ModernTheme.FONT_PRIMARY,
+        activity_label = tk.Label(text_frame, text=activity, font=("Segoe UI", 10),
                                  bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_900, anchor=tk.W)
         activity_label.pack(fill=tk.X)
         
-        time_label = tk.Label(text_frame, text=time, font=ModernTheme.FONT_SMALL,
+        time_label = tk.Label(text_frame, text=time, font=("Segoe UI", 9),
                              bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500, anchor=tk.W)
         time_label.pack(fill=tk.X)
 
@@ -285,12 +287,12 @@ class DashboardTab:
         
         # Welcome text
         welcome_label = tk.Label(welcome_content, text="Chào mừng bạn đến với hệ thống quản lý đoàn - hội", 
-                                font=ModernTheme.FONT_HEADING,
+                                font=("Segoe UI", 16, "bold"),
                                 bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_900)
         welcome_label.pack(anchor=tk.W)
         
         subtitle_label = tk.Label(welcome_content, text="Tổng quan và quản lý tất cả hoạt động của tổ chức", 
-                                 font=ModernTheme.FONT_PRIMARY,
+                                 font=("Segoe UI", 11),
                                  bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_600)
         subtitle_label.pack(anchor=tk.W, pady=(4, 0))
     
@@ -302,7 +304,7 @@ class DashboardTab:
         
         # Title
         title_label = tk.Label(stats_container, text="Thống kê tổng quan", 
-                              font=ModernTheme.FONT_HEADING,
+                              font=("Segoe UI", 14, "bold"),
                               bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900)
         title_label.pack(anchor=tk.W, pady=(0, ModernTheme.PADDING_MEDIUM))
         

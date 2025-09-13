@@ -27,19 +27,21 @@ class TaskTable:
         """
         columns = ('ID', 'Tiêu đề', 'Ưu tiên', 'Trạng thái', 'Người thực hiện', 'Hạn hoàn thành', 'Tiến độ')
         column_widths = {
-            'ID': 60, 'Tiêu đề': 200, 'Ưu tiên': 100, 'Trạng thái': 120, 
-            'Người thực hiện': 150, 'Hạn hoàn thành': 120, 'Tiến độ': 80
+            'ID': 60, 'Tiêu đề': 250, 'Ưu tiên': 140, 'Trạng thái': 160, 
+            'Người thực hiện': 150, 'Hạn hoàn thành': 130, 'Tiến độ': 90
         }
         
         tree, container = BaseTable.create_modern_table(parent, columns, column_widths)
         tree.configure(height=15)
         
         # Additional tags for task priorities and status
-        tree.tag_configure('high_priority', background='#fff5f5', foreground='#dc2626')
+        tree.tag_configure('high_priority', background='#fef2f2', foreground='#dc2626')
         tree.tag_configure('medium_priority', background='#fffbeb', foreground='#d97706')
-        tree.tag_configure('low_priority', background='#f0fdf4', foreground='#16a34a')
+        tree.tag_configure('low_priority', background='#f0f9ff', foreground='#0369a1')
+        tree.tag_configure('normal', background='#ffffff', foreground='#374151')
         tree.tag_configure('overdue', background='#fef2f2', foreground='#991b1b')
         tree.tag_configure('completed', background='#f0fdf4', foreground='#166534')
+        tree.tag_configure('cancelled', background='#f9fafb', foreground='#6b7280')
         
         return tree, container
 
@@ -315,11 +317,36 @@ class TaskActions:
         for item in tree.get_children():
             tree.delete(item)
         
+        # Mapping for user-friendly display
+        priority_display = {
+            'low': '🟢 Thấp',
+            'medium': '🟡 Trung bình',
+            'high': '🟠 Cao',
+            'urgent': '🔴 Khẩn cấp'
+        }
+        
+        status_display = {
+            'not_started': '⏸️ Chưa bắt đầu',
+            'in_progress': '⚡ Đang thực hiện',
+            'completed': '✅ Hoàn thành',
+            'cancelled': '❌ Hủy bỏ',
+            'on_hold': '⏸️ Tạm dừng'
+        }
+        
         # Add tasks with styling
+        if not tasks:
+            # Show empty state
+            tree.insert('', 'end', values=('', '📝 Không có công việc nào', '', '', '', '', ''))
+            return
+            
         for task in tasks:
             # Format priority and status for better display
             priority_str = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
             status_str = task.status.value if hasattr(task.status, 'value') else str(task.status)
+            
+            # Convert to user-friendly display
+            priority_display_str = priority_display.get(priority_str, priority_str)
+            status_display_str = status_display.get(status_str, status_str)
             
             # Format date and progress
             due_date = task.due_date.strftime('%d/%m/%Y') if hasattr(task, 'due_date') and task.due_date else ''
@@ -328,8 +355,8 @@ class TaskActions:
             item_id = tree.insert('', 'end', values=(
                 task.id,
                 task.title or "",
-                priority_str,
-                status_str,
+                priority_display_str,
+                status_display_str,
                 task.assigned_to or '',
                 due_date,
                 progress
@@ -344,24 +371,30 @@ class TaskActions:
         priority = task.priority.value if hasattr(task.priority, 'value') else task.priority
         status = task.status.value if hasattr(task.status, 'value') else task.status
         
-        # Priority-based styling
-        if priority == "Khẩn cấp":
-            tree.item(item_id, tags=('high_priority',))
-        elif priority == "Cao":
-            tree.item(item_id, tags=('high_priority',))
-        elif priority == "Trung bình":
-            tree.item(item_id, tags=('medium_priority',))
-        elif priority == "Thấp":
-            tree.item(item_id, tags=('low_priority',))
-        
-        # Status-based styling (overrides priority for certain statuses)
-        if status == "Hoàn thành":
+        # Status-based styling (primary)
+        if status in ["completed", "Hoàn thành"]:
             tree.item(item_id, tags=('completed',))
-        elif hasattr(task, 'due_date') and task.due_date:
-            # Check if overdue
+            return
+        elif status in ["cancelled", "Hủy bỏ"]:
+            tree.item(item_id, tags=('cancelled',))
+            return
+        
+        # Check if overdue
+        if hasattr(task, 'due_date') and task.due_date:
             from datetime import datetime
-            if task.due_date < datetime.now() and status != "Hoàn thành":
+            if task.due_date < datetime.now() and status not in ["completed", "Hoàn thành"]:
                 tree.item(item_id, tags=('overdue',))
+                return
+        
+        # Priority-based styling (secondary)
+        if priority in ["urgent", "Khẩn cấp", "🔴 Khẩn cấp"]:
+            tree.item(item_id, tags=('high_priority',))
+        elif priority in ["high", "Cao", "🟠 Cao"]:
+            tree.item(item_id, tags=('medium_priority',))
+        elif priority in ["medium", "Trung bình", "🟡 Trung bình"]:
+            tree.item(item_id, tags=('low_priority',))
+        else:  # low priority
+            tree.item(item_id, tags=('normal',))
     
     @staticmethod
     def get_selected_task_id(tree: ttk.Treeview) -> Optional[int]:

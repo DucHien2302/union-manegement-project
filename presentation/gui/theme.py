@@ -36,10 +36,10 @@ class ModernTheme:
     GRAY_900 = "#111827"
     
     # Typography
-    FONT_PRIMARY = ("Segoe UI", 10)
-    FONT_HEADING = ("Segoe UI", 14, "bold")
-    FONT_SUBHEADING = ("Segoe UI", 12, "bold")
-    FONT_SMALL = ("Segoe UI", 8)
+    FONT_PRIMARY = ("Segoe UI", 12)
+    FONT_HEADING = ("Segoe UI", 18, "bold")
+    FONT_SUBHEADING = ("Segoe UI", 14, "bold")
+    FONT_SMALL = ("Segoe UI", 10)
     
     # Spacing
     PADDING_SMALL = 8
@@ -62,15 +62,17 @@ class StyleManager:
         style.configure("Modern.Treeview",
                        background=ModernTheme.WHITE,
                        foreground=ModernTheme.GRAY_900,
-                       rowheight=40,
+                       rowheight=45,
                        fieldbackground=ModernTheme.WHITE,
-                       borderwidth=0)
+                       borderwidth=0,
+                       font=ModernTheme.FONT_PRIMARY)
         
         style.configure("Modern.Treeview.Heading",
                        background=ModernTheme.GRAY_100,
                        foreground=ModernTheme.GRAY_700,
                        relief="flat",
-                       borderwidth=1)
+                       borderwidth=1,
+                       font=ModernTheme.FONT_SUBHEADING)
         
         # Configure Notebook style
         style.configure("Modern.TNotebook",
@@ -82,7 +84,8 @@ class StyleManager:
                        background=ModernTheme.GRAY_200,
                        foreground=ModernTheme.GRAY_700,
                        padding=[20, 12],
-                       borderwidth=0)
+                       borderwidth=0,
+                       font=ModernTheme.FONT_PRIMARY)
         
         style.map("Modern.TNotebook.Tab",
                  background=[('selected', ModernTheme.WHITE),
@@ -97,7 +100,8 @@ class StyleManager:
                        background=ModernTheme.PRIMARY,
                        foreground=ModernTheme.WHITE,
                        borderwidth=0,
-                       focuscolor="none")
+                       focuscolor="none",
+                       font=ModernTheme.FONT_PRIMARY)
         
         style.map("Primary.TButton",
                  background=[('active', ModernTheme.PRIMARY_DARK),
@@ -107,7 +111,8 @@ class StyleManager:
                        background=ModernTheme.GRAY_100,
                        foreground=ModernTheme.GRAY_700,
                        borderwidth=0,
-                       focuscolor="none")
+                       focuscolor="none",
+                       font=ModernTheme.FONT_PRIMARY)
         
         style.map("Secondary.TButton",
                  background=[('active', ModernTheme.GRAY_200),

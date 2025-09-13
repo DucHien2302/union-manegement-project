@@ -27,8 +27,8 @@ class ReportTable:
         """
         columns = ('ID', 'Tiêu đề', 'Loại', 'Kỳ', 'Trạng thái', 'Ngày tạo')
         column_widths = {
-            'ID': 60, 'Tiêu đề': 250, 'Loại': 120, 'Kỳ': 120, 
-            'Trạng thái': 120, 'Ngày tạo': 120
+            'ID': 60, 'Tiêu đề': 300, 'Loại': 140, 'Kỳ': 120, 
+            'Trạng thái': 150, 'Ngày tạo': 120
         }
         
         tree, container = BaseTable.create_modern_table(parent, columns, column_widths)
@@ -291,11 +291,37 @@ class ReportActions:
         for item in tree.get_children():
             tree.delete(item)
         
+        # Mapping for user-friendly display
+        report_type_display = {
+            'weekly': '📊 Tuần',
+            'monthly': '📅 Tháng',
+            'quarterly': '📈 Quý',
+            'annual': '📋 Năm',
+            'special': '⭐ Đặc biệt'
+        }
+        
+        status_display = {
+            'draft': '📝 Nháp',
+            'submitted': '📤 Đã nộp',
+            'approved': '✅ Đã duyệt',
+            'rejected': '❌ Từ chối',
+            'in_review': '👀 Đang xem xét'
+        }
+        
         # Add reports
+        if not reports:
+            # Show empty state
+            tree.insert('', 'end', values=('', '📭 Không có báo cáo nào', '', '', '', ''))
+            return
+            
         for report in reports:
             # Format report type and status for better display
             report_type_str = report.report_type.value if hasattr(report.report_type, 'value') else str(report.report_type)
             status_str = report.status.value if hasattr(report.status, 'value') else str(report.status)
+            
+            # Convert to user-friendly display
+            report_type_display_str = report_type_display.get(report_type_str, report_type_str)
+            status_display_str = status_display.get(status_str, status_str)
             
             # Format date
             created_date = report.created_at.strftime('%d/%m/%Y') if hasattr(report, 'created_at') and report.created_at else ''
@@ -303,9 +329,9 @@ class ReportActions:
             tree.insert('', 'end', values=(
                 report.id,
                 report.title or "",
-                report_type_str,
+                report_type_display_str,
                 report.period or "",
-                status_str,
+                status_display_str,
                 created_date
             ))
     

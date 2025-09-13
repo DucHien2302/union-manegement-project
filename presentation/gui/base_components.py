@@ -53,7 +53,7 @@ class BaseHeader:
                                font=ModernTheme.FONT_PRIMARY,
                                bg=ModernTheme.PRIMARY if is_primary else ModernTheme.GRAY_100,
                                fg=ModernTheme.WHITE if is_primary else ModernTheme.GRAY_700,
-                               border=0, cursor="hand2", padx=16 if is_primary else 12, pady=8,
+                               border=0, cursor="hand2", padx=16 if is_primary else 12, pady=10,
                                command=callback)
                 
                 if is_primary:
@@ -76,7 +76,7 @@ class BaseButton:
         btn = tk.Button(parent, text=text, 
                        font=ModernTheme.FONT_PRIMARY,
                        bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
-                       border=0, cursor="hand2", padx=16, pady=8,
+                       border=0, cursor="hand2", padx=16, pady=10,
                        command=command, **kwargs)
         
         BaseButton.add_hover_effects(btn, is_primary=True)
@@ -88,7 +88,7 @@ class BaseButton:
         btn = tk.Button(parent, text=text, 
                        font=ModernTheme.FONT_PRIMARY,
                        bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
-                       border=0, cursor="hand2", padx=12, pady=8,
+                       border=0, cursor="hand2", padx=12, pady=10,
                        command=command, **kwargs)
         
         BaseButton.add_hover_effects(btn, is_primary=False)
@@ -134,31 +134,54 @@ class BaseTable:
         Returns:
             Tuple of (treeview, container_frame)
         """
-        # Table container
-        table_container = tk.Frame(parent, bg=ModernTheme.WHITE)
+        # Table container with border and shadow effect
+        table_container = tk.Frame(parent, bg=ModernTheme.WHITE, relief=tk.FLAT, bd=1)
         
         # Treeview with modern style
         tree = ttk.Treeview(table_container, columns=columns, show='headings', 
                            style='Modern.Treeview', height=15)
         
-        # Configure columns
+        # Configure columns with better styling
         for col in columns:
-            tree.heading(col, text=col)
+            tree.heading(col, text=col, anchor=tk.W)
             width = column_widths.get(col, 100) if column_widths else 100
-            tree.column(col, width=width, anchor=tk.W)
+            
+            # Set alignment based on column content
+            if col in ['ID', 'STT']:
+                anchor = tk.CENTER
+            elif col in ['Ngày tạo', 'Hạn chót', 'Ngày sinh']:
+                anchor = tk.CENTER
+            else:
+                anchor = tk.W
+                
+            tree.column(col, width=width, anchor=anchor, minwidth=50)
         
-        # Scrollbars
+        # Scrollbars with modern styling
         v_scrollbar = ttk.Scrollbar(table_container, orient=tk.VERTICAL, command=tree.yview)
         h_scrollbar = ttk.Scrollbar(table_container, orient=tk.HORIZONTAL, command=tree.xview)
         tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
         
-        # Pack with padding
+        # Pack with improved layout
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, 
                  padx=ModernTheme.PADDING_LARGE, pady=ModernTheme.PADDING_LARGE)
         v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=ModernTheme.PADDING_LARGE)
         
-        # Row selection styling
-        tree.tag_configure('selected', background=ModernTheme.PRIMARY_LIGHT)
+        # Enhanced row styling
+        tree.tag_configure('selected', background=ModernTheme.PRIMARY_LIGHT, foreground=ModernTheme.GRAY_900)
+        tree.tag_configure('alternate', background=ModernTheme.GRAY_50)
+        tree.tag_configure('high_priority', background='#ffebee', foreground='#c62828')
+        tree.tag_configure('completed', background='#e8f5e8', foreground='#2e7d32')
+        tree.tag_configure('warning', background='#fff3e0', foreground='#ef6c00')
+        
+        # Add hover effect through binding
+        def on_motion(event):
+            region = tree.identify("region", event.x, event.y)
+            if region == "cell":
+                tree.configure(cursor="hand2")
+            else:
+                tree.configure(cursor="arrow")
+        
+        tree.bind('<Motion>', on_motion)
         
         return tree, table_container
 
@@ -239,7 +262,7 @@ class BaseSearch:
                            pady=ModernTheme.PADDING_MEDIUM)
         
         # Search icon
-        search_label = tk.Label(search_content, text="🔍", font=("Segoe UI", 16),
+        search_label = tk.Label(search_content, text="🔍", font=("Segoe UI", 18),
                                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
         search_label.pack(side=tk.LEFT)
         

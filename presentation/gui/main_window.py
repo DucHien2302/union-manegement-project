@@ -114,8 +114,8 @@ class MainApplication:
     
     def _create_header(self):
         """Tạo header hiện đại với branding và navigation"""
-        # Header container
-        header_frame = tk.Frame(self.root, bg=ModernTheme.WHITE, height=80)
+        # Header container with increased height
+        header_frame = tk.Frame(self.root, bg=ModernTheme.WHITE, height=90)
         header_frame.pack(fill=tk.X, pady=(0, 1))
         header_frame.pack_propagate(False)
         
@@ -128,21 +128,21 @@ class MainApplication:
         left_frame.pack(side=tk.LEFT, fill=tk.Y)
         
         # Logo (emoji as placeholder)
-        logo_label = tk.Label(left_frame, text="🏛️", font=("Segoe UI", 24), 
+        logo_label = tk.Label(left_frame, text="🏛️", font=("Segoe UI", 22), 
                              bg=ModernTheme.WHITE, fg=ModernTheme.PRIMARY)
-        logo_label.pack(side=tk.LEFT, padx=(0, 12))
+        logo_label.pack(side=tk.LEFT, padx=(0, 12), anchor=tk.CENTER)
         
         # Title and subtitle
         title_frame = tk.Frame(left_frame, bg=ModernTheme.WHITE)
-        title_frame.pack(side=tk.LEFT, fill=tk.Y)
+        title_frame.pack(side=tk.LEFT, fill=tk.Y, anchor=tk.W)
         
         title_label = tk.Label(title_frame, text="Union Management", 
-                              font=("Segoe UI", 18, "bold"),
+                              font=("Segoe UI", 16, "bold"),
                               bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_900)
-        title_label.pack(anchor=tk.W)
+        title_label.pack(anchor=tk.W, pady=(0, 2))
         
         subtitle_label = tk.Label(title_frame, text="Hệ thống quản lý đoàn - hội", 
-                                 font=ModernTheme.FONT_PRIMARY,
+                                 font=("Segoe UI", 11),
                                  bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_600)
         subtitle_label.pack(anchor=tk.W)
         
@@ -158,9 +158,9 @@ class MainApplication:
         ]
         
         for icon, tooltip, command in quick_actions:
-            btn = tk.Button(right_frame, text=icon, font=("Segoe UI", 16),
+            btn = tk.Button(right_frame, text=icon, font=("Segoe UI", 14),
                            bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
-                           border=0, cursor="hand2", padx=12, pady=8,
+                           border=0, cursor="hand2", padx=10, pady=6,
                            command=command)
             btn.pack(side=tk.RIGHT, padx=2)
             

@@ -27,8 +27,8 @@ class MemberTable:
         """
         columns = ('ID', 'Mã TV', 'Họ tên', 'Loại', 'Chức vụ', 'Phòng ban', 'Trạng thái')
         column_widths = {
-            'ID': 60, 'Mã TV': 100, 'Họ tên': 200, 'Loại': 120, 
-            'Chức vụ': 150, 'Phòng ban': 150, 'Trạng thái': 100
+            'ID': 60, 'Mã TV': 120, 'Họ tên': 220, 'Loại': 140, 
+            'Chức vụ': 180, 'Phòng ban': 150, 'Trạng thái': 130
         }
         
         tree, container = BaseTable.create_modern_table(parent, columns, column_widths)
@@ -227,14 +227,14 @@ class MemberForm:
         cancel_btn = tk.Button(button_frame, text="Hủy", 
                               font=ModernTheme.FONT_PRIMARY,
                               bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
-                              border=0, cursor="hand2", padx=20, pady=8,
+                              border=0, cursor="hand2", padx=20, pady=10,
                               command=on_cancel)
         cancel_btn.pack(side=tk.RIGHT)
         
         save_btn = tk.Button(button_frame, text="Lưu", 
                             font=ModernTheme.FONT_PRIMARY,
                             bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
-                            border=0, cursor="hand2", padx=20, pady=8,
+                            border=0, cursor="hand2", padx=20, pady=10,
                             command=on_save)
         save_btn.pack(side=tk.RIGHT, padx=(0, ModernTheme.PADDING_SMALL))
         
@@ -262,18 +262,23 @@ class MemberActions:
         
         # Mapping for user-friendly display
         member_type_display = {
-            'union_member': 'Đoàn viên',
-            'association_member': 'Hội viên', 
-            'executive': 'Cán bộ'
+            'union_member': '👤 Đoàn viên',
+            'association_member': '👥 Hội viên', 
+            'executive': '👔 Cán bộ'
         }
         
         status_display = {
-            'active': 'Hoạt động',
-            'inactive': 'Tạm dừng',
-            'suspended': 'Nghỉ'
+            'active': '✅ Hoạt động',
+            'inactive': '⏸️ Tạm dừng',
+            'suspended': '❌ Nghỉ'
         }
         
         # Add members
+        if not members:
+            # Show empty state
+            tree.insert('', 'end', values=('', '', '🔍 Không có thành viên nào', '', '', '', ''))
+            return
+            
         for member in members:
             member_type_str = member.member_type.value if hasattr(member.member_type, 'value') else str(member.member_type)
             status_str = member.status.value if hasattr(member.status, 'value') else str(member.status)
