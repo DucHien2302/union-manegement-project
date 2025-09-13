@@ -131,3 +131,97 @@ class MemberManagementUseCase:
             'active': active_members,
             'inactive': inactive_members
         }
+    
+    def get_members_by_department(self, department: str) -> List[Member]:
+        """Lấy danh sách thành viên theo phòng ban"""
+        return self.member_repository.get_members_by_department(department)
+    
+    def get_paginated_members(self, page: int = 1, page_size: int = 20) -> tuple[List[Member], int]:
+        """Lấy danh sách thành viên có phân trang"""
+        if hasattr(self.member_repository, 'get_paginated_members'):
+            return self.member_repository.get_paginated_members(page, page_size)
+        
+        # Fallback nếu repository chưa có phương thức này
+        all_members = self.get_all_members()
+        total = len(all_members)
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        return all_members[start_idx:end_idx], total
+    
+    def search_members(self, search_term: str, search_fields: List[str] = None) -> List[Member]:
+        """Tìm kiếm thành viên theo nhiều trường"""
+        if hasattr(self.member_repository, 'search_members'):
+            return self.member_repository.search_members(search_term, search_fields)
+        
+        # Fallback sử dụng search_by_name
+        return self.search_members_by_name(search_term)
+    
+    def validate_member_data(self, member_data: dict) -> List[str]:
+        """Kiểm tra tính hợp lệ của dữ liệu thành viên"""
+        errors = []
+        
+        # Kiểm tra các trường bắt buộc
+        required_fields = ['member_code', 'full_name']
+        for field in required_fields:
+            if not member_data.get(field, '').strip():
+                errors.append(f"Trường '{field}' không được để trống")
+        
+        # Kiểm tra email
+        email = member_data.get('email', '')
+        if email and '@' not in email:
+            errors.append("Email không hợp lệ")
+        
+        # Kiểm tra phone
+        phone = member_data.get('phone', '')
+        if phone and not phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '').isdigit():
+            errors.append("Số điện thoại không hợp lệ")
+        
+        return errors
+    
+    def bulk_update_member_status(self, member_ids: List[int], new_status: MemberStatus) -> int:
+        """Cập nhật trạng thái hàng loạt"""
+        if hasattr(self.member_repository, 'bulk_update_status'):
+            return self.member_repository.bulk_update_status(member_ids, new_status)
+        
+        # Fallback - cập nhật từng thành viên
+        updated_count = 0
+        for member_id in member_ids:
+            try:
+                member = self.get_member_by_id(member_id)
+                if member:
+                    member.status = new_status
+                    member.updated_at = datetime.now()
+                    self.member_repository.update(member)
+                    updated_count += 1
+            except Exception:
+                continue
+        
+        return updated_count
+    
+    def export_members_data(self, filters: dict = None) -> List[dict]:
+        """Xuất dữ liệu thành viên để export"""
+        if filters:
+            # Áp dụng các bộ lọc nếu có
+            members = self.get_all_members()  # Có thể cải thiện với filter cụ thể
+        else:
+            members = self.get_all_members()
+        
+        export_data = []
+        for member in members:
+            export_data.append({
+                'Mã thành viên': member.member_code,
+                'Họ tên': member.full_name,
+                'Ngày sinh': member.date_of_birth.strftime('%d/%m/%Y') if member.date_of_birth else '',
+                'Giới tính': member.gender,
+                'Số điện thoại': member.phone,
+                'Email': member.email,
+                'Địa chỉ': member.address,
+                'Chức vụ': member.position,
+                'Phòng ban': member.department,
+                'Loại thành viên': member.get_member_type_display(),
+                'Trạng thái': member.get_status_display(),
+                'Ngày tham gia': member.join_date.strftime('%d/%m/%Y') if member.join_date else '',
+                'Ghi chú': member.notes
+            })
+        
+        return export_data

@@ -196,16 +196,10 @@ class MainApplication:
         )
         self.notebook.add(dashboard_frame, text="🏠 Dashboard")
         
-        # Member tab
-        member_frame, self.member_tree, self.member_search_var = MemberTab.create_member_tab(
-            self.notebook,
-            callbacks={
-                'add_member': self._add_member,
-                'edit_member': self._edit_member,
-                'delete_member': self._delete_member,
-                'search_members': self._search_members
-            }
-        )
+        # Member tab - sử dụng controller mới
+        from presentation.controllers.member_controller import MemberController
+        self.member_controller = MemberController(self.notebook)
+        member_frame = self.member_controller.get_main_frame()
         self.notebook.add(member_frame, text="👥 Thành viên")
         
         # Report tab
@@ -293,9 +287,11 @@ class MainApplication:
     def _refresh_members(self):
         """Làm mới danh sách thành viên"""
         try:
-            self.all_members = self.member_use_case.get_all_members()
-            MemberActions.populate_member_tree(self.member_tree, self.all_members)
-            self.update_status(f"Đã tải {len(self.all_members)} thành viên", temp=True)
+            # Use member controller to refresh data
+            if hasattr(self, 'member_controller'):
+                self.member_controller.refresh_data()
+                self.all_members = self.member_controller.all_members
+                self.update_status(f"Đã tải {len(self.all_members)} thành viên", temp=True)
         except Exception as e:
             messagebox.showerror("Lỗi", f"Không thể tải danh sách thành viên: {e}")
     
@@ -389,29 +385,23 @@ class MainApplication:
     
     def _edit_member(self):
         """Sửa thông tin thành viên"""
-        member_id = MemberActions.get_selected_member_id(self.member_tree)
-        if not member_id:
-            messagebox.showwarning("Cảnh báo", "Vui lòng chọn thành viên cần sửa!")
-            return
-        
-        # TODO: Get member data and show edit form
-        messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
+        try:
+            if hasattr(self, 'member_controller'):
+                self.member_controller.edit_member()
+            else:
+                messagebox.showwarning("Cảnh báo", "Vui lòng chọn thành viên cần sửa!")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể sửa thành viên: {e}")
     
     def _delete_member(self):
         """Xóa thành viên"""
-        member_id = MemberActions.get_selected_member_id(self.member_tree)
-        if not member_id:
-            messagebox.showwarning("Cảnh báo", "Vui lòng chọn thành viên cần xóa!")
-            return
-        
-        if messagebox.askyesno("Xác nhận", "Bạn có chắc muốn xóa thành viên này?"):
-            # TODO: Implement actual member deletion
-            messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
-    
-    def _search_members(self, event=None):
-        """Tìm kiếm thành viên"""
-        search_term = self.member_search_var.get()
-        MemberActions.search_members(self.member_tree, search_term, self.all_members)
+        try:
+            if hasattr(self, 'member_controller'):
+                self.member_controller.delete_member()
+            else:
+                messagebox.showwarning("Cảnh báo", "Vui lòng chọn thành viên cần xóa!")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể xóa thành viên: {e}")
     
     # Report management methods
     def _add_report(self):

@@ -190,3 +190,99 @@ class MemberRepository(IMemberRepository):
             return count or 0
         finally:
             session.close()
+    
+    def get_members_by_department(self, department: str) -> List[Member]:
+        """Lấy thành viên theo phòng ban"""
+        session: Session = self.db_manager.get_session()
+        try:
+            models = session.query(MemberModel).filter(
+                MemberModel.department.ilike(f"%{department}%")
+            ).order_by(MemberModel.full_name).all()
+            return [self._model_to_entity(model) for model in models]
+        finally:
+            session.close()
+    
+    def get_paginated_members(self, page: int = 1, page_size: int = 20) -> tuple[List[Member], int]:
+        """Lấy danh sách thành viên có phân trang"""
+        session: Session = self.db_manager.get_session()
+        try:
+            # Tính offset
+            offset = (page - 1) * page_size
+            
+            # Lấy tổng số bản ghi
+            total = session.query(func.count(MemberModel.id)).scalar()
+            
+            # Lấy dữ liệu theo trang
+            models = session.query(MemberModel).order_by(
+                MemberModel.full_name
+            ).offset(offset).limit(page_size).all()
+            
+            members = [self._model_to_entity(model) for model in models]
+            return members, total or 0
+        finally:
+            session.close()
+    
+    def search_members(self, search_term: str, search_fields: List[str] = None) -> List[Member]:
+        """Tìm kiếm thành viên theo nhiều trường"""
+        if not search_fields:
+            search_fields = ['full_name', 'member_code', 'phone', 'email']
+        
+        session: Session = self.db_manager.get_session()
+        try:
+            query = session.query(MemberModel)
+            
+            # Tạo điều kiện OR cho các trường tìm kiếm
+            conditions = []
+            for field in search_fields:
+                if hasattr(MemberModel, field):
+                    attr = getattr(MemberModel, field)
+                    conditions.append(attr.ilike(f"%{search_term}%"))
+            
+            if conditions:
+                from sqlalchemy import or_
+                query = query.filter(or_(*conditions))
+            
+            models = query.order_by(MemberModel.full_name).all()
+            return [self._model_to_entity(model) for model in models]
+        finally:
+            session.close()
+    
+    def get_members_count_by_status(self) -> dict:
+        """Lấy thống kê số lượng thành viên theo trạng thái"""
+        session: Session = self.db_manager.get_session()
+        try:
+            from sqlalchemy import case
+            
+            result = session.query(
+                MemberModel.status,
+                func.count(MemberModel.id).label('count')
+            ).group_by(MemberModel.status).all()
+            
+            stats = {}
+            for status, count in result:
+                stats[status.value] = count
+            
+            return stats
+        finally:
+            session.close()
+    
+    def bulk_update_status(self, member_ids: List[int], new_status: MemberStatus) -> int:
+        """Cập nhật trạng thái hàng loạt"""
+        session: Session = self.db_manager.get_session()
+        try:
+            updated_count = session.query(MemberModel).filter(
+                MemberModel.id.in_(member_ids)
+            ).update(
+                {
+                    'status': new_status,
+                    'updated_at': func.now()
+                },
+                synchronize_session=False
+            )
+            session.commit()
+            return updated_count
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
