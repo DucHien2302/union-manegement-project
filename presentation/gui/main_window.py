@@ -226,26 +226,37 @@ class MainApplication:
         self.notebook.add(member_frame, text="👥 Thành viên")
         
         # Report tab
-        report_frame, self.report_tree, self.report_filter_vars = ReportTab.create_report_tab(
+        report_frame, self.report_tree, self.report_search_var, self.report_filter_vars = ReportTab.create_report_tab(
             self.notebook,
             callbacks={
                 'add_report': self._add_report,
                 'edit_report': self._edit_report,
+                'view_report': self._view_report,
+                'delete_report': self._delete_report,
                 'approve_report': self._approve_report,
-                'filter_reports': self._filter_reports
+                'search_reports': self._search_reports,
+                'filter_reports': self._filter_reports,
+                'export_reports': self._export_reports,
+                'bulk_action': self._bulk_action_reports,
+                'refresh_data': self._refresh_reports
             }
         )
         self.notebook.add(report_frame, text="📋 Báo cáo")
         
         # Task tab
-        task_frame, self.task_tree, self.task_filter_vars = TaskTab.create_task_tab(
+        task_frame, self.task_tree, self.task_search_var, self.task_filter_vars = TaskTab.create_task_tab(
             self.notebook,
             callbacks={
                 'add_task': self._add_task,
                 'edit_task': self._edit_task,
+                'view_task': self._view_task,
                 'complete_task': self._complete_task,
                 'delete_task': self._delete_task,
-                'filter_tasks': self._filter_tasks
+                'search_tasks': self._search_tasks,
+                'filter_tasks': self._filter_tasks,
+                'export_tasks': self._export_tasks,
+                'bulk_action': self._bulk_action_tasks,
+                'refresh_data': self._refresh_tasks
             }
         )
         self.notebook.add(task_frame, text="✅ Công việc")
@@ -486,11 +497,190 @@ class MainApplication:
                 self._refresh_dashboard()
         except Exception as e:
             messagebox.showerror("Lỗi", f"Không thể duyệt báo cáo: {e}")
+
+    def _view_report(self):
+        """Xem báo cáo"""
+        self._edit_report()  # Reuse edit for now
+
+    def _delete_report(self):
+        """Xóa báo cáo"""
+        report_id = ReportActions.get_selected_report_id(self.report_tree)
+        if not report_id:
+            messagebox.showwarning("Cảnh báo", "Vui lòng chọn báo cáo cần xóa!")
+            return
+        
+        if messagebox.askyesno("Xác nhận", "Bạn có chắc chắn muốn xóa báo cáo này?"):
+            try:
+                success = self.report_controller.delete_report(report_id)
+                if success:
+                    self._refresh_reports()
+                    self._refresh_dashboard()
+            except Exception as e:
+                messagebox.showerror("Lỗi", f"Không thể xóa báo cáo: {e}")
+
+    def _search_reports(self, event=None):
+        """Tìm kiếm báo cáo"""
+        try:
+            search_term = getattr(self, 'report_search_var', tk.StringVar()).get()
+            if search_term and search_term != "Tìm kiếm báo cáo...":
+                # Implement search logic here
+                pass
+            self._refresh_reports()
+        except Exception as e:
+            print(f"Search error: {e}")
+
+    def _export_reports(self):
+        """Xuất danh sách báo cáo ra Excel"""
+        try:
+            if hasattr(self, 'report_tree') and self.all_reports:
+                # Xuất báo cáo hiện tại đang hiển thị trên tree
+                file_path = ReportActions.export_visible_reports_to_excel(self.report_tree, self.all_reports)
+                if file_path:
+                    self.update_status(f"Đã xuất báo cáo thành công: {file_path}")
+            else:
+                messagebox.showwarning("Cảnh báo", "Không có dữ liệu báo cáo để xuất!")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể xuất báo cáo: {e}")
+            print(f"Export reports error: {e}")
+
+    def _bulk_action_reports(self, action):
+        """Thao tác hàng loạt cho báo cáo"""
+        try:
+            # Lấy các báo cáo được chọn từ enhanced table
+            if not hasattr(self, 'report_tree'):
+                messagebox.showwarning("Cảnh báo", "Không tìm thấy bảng báo cáo!")
+                return
+            
+            # Lấy danh sách ID được chọn từ checkbox
+            selected_ids = []
+            for item in self.report_tree.get_children():
+                values = self.report_tree.item(item)['values']
+                if len(values) > 0 and values[0] == '☑':  # Checkbox được chọn
+                    try:
+                        report_id = int(values[1])  # ID ở cột thứ 2
+                        selected_ids.append(report_id)
+                    except (ValueError, IndexError):
+                        continue
+            
+            if not selected_ids:
+                messagebox.showwarning("Cảnh báo", "Vui lòng chọn ít nhất một báo cáo!")
+                return
+            
+            # Thực hiện thao tác tương ứng
+            success_count = 0
+            if action == 'approve':
+                for report_id in selected_ids:
+                    try:
+                        # Cập nhật trạng thái thành 'approved' trong database
+                        report = self.report_controller.get_report_by_id(report_id)
+                        if report:
+                            from domain.entities.report import ReportStatus
+                            # Chuyển đổi thành dictionary cho controller
+                            report_data = {
+                                'title': report.title,
+                                'content': getattr(report, 'content', ''),
+                                'report_type': report.report_type.value if hasattr(report.report_type, 'value') else str(report.report_type),
+                                'period': getattr(report, 'period', ''),
+                                'status': 'Đã duyệt',  # Use Vietnamese display name
+                                'created_by': getattr(report, 'created_by', '')
+                            }
+                            self.report_controller.update_report(report_id, report_data)
+                            success_count += 1
+                    except Exception as e:
+                        print(f"Error approving report {report_id}: {e}")
+                
+                messagebox.showinfo("Thành công", f"Đã duyệt {success_count}/{len(selected_ids)} báo cáo!")
+                
+            elif action == 'reject':
+                for report_id in selected_ids:
+                    try:
+                        # Cập nhật trạng thái thành 'rejected' trong database
+                        report = self.report_controller.get_report_by_id(report_id)
+                        if report:
+                            from domain.entities.report import ReportStatus
+                            # Chuyển đổi thành dictionary cho controller
+                            report_data = {
+                                'title': report.title,
+                                'content': getattr(report, 'content', ''),
+                                'report_type': report.report_type.value if hasattr(report.report_type, 'value') else str(report.report_type),
+                                'period': getattr(report, 'period', ''),
+                                'status': 'Từ chối',  # Use Vietnamese display name
+                                'created_by': getattr(report, 'created_by', '')
+                            }
+                            self.report_controller.update_report(report_id, report_data)
+                            success_count += 1
+                    except Exception as e:
+                        print(f"Error rejecting report {report_id}: {e}")
+                
+                messagebox.showinfo("Thành công", f"Đã từ chối {success_count}/{len(selected_ids)} báo cáo!")
+                
+            elif action == 'delete':
+                if messagebox.askyesno("Xác nhận", f"Bạn có chắc chắn muốn xóa {len(selected_ids)} báo cáo được chọn?"):
+                    for report_id in selected_ids:
+                        try:
+                            self.report_controller.delete_report(report_id)
+                            success_count += 1
+                        except Exception as e:
+                            print(f"Error deleting report {report_id}: {e}")
+                    
+                    messagebox.showinfo("Thành công", f"Đã xóa {success_count}/{len(selected_ids)} báo cáo!")
+            
+            # Làm mới danh sách
+            self._refresh_reports()
+            
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể thực hiện thao tác: {e}")
+            print(f"Bulk action error: {e}")
+
+    def _refresh_reports(self):
+        """Làm mới danh sách báo cáo"""
+        try:
+            print("🔄 Loading reports...")
+            self.all_reports = self.report_controller.get_all_reports()
+            print(f"📊 Found {len(self.all_reports)} reports")
+            ReportActions.populate_report_tree(self.report_tree, self.all_reports)
+            print("✅ Report tree populated")
+            self.update_status(f"Đã tải {len(self.all_reports)} báo cáo", temp=True)
+        except Exception as e:
+            print(f"❌ Error loading reports: {e}")
+            messagebox.showerror("Lỗi", f"Không thể tải danh sách báo cáo: {e}")
     
     def _filter_reports(self, event=None):
-        """Lọc báo cáo theo trạng thái"""
-        status_filter = self.report_filter_vars['trạng_thái'].get()
-        ReportActions.filter_reports(self.report_tree, status_filter, self.all_reports)
+        """Lọc báo cáo theo nhiều tiêu chí"""
+        try:
+            # Lấy tất cả filter values
+            report_type_filter = self.report_filter_vars.get('report_type', tk.StringVar()).get()
+            period_filter = self.report_filter_vars.get('period', tk.StringVar()).get()
+            status_filter = self.report_filter_vars.get('status', tk.StringVar()).get()
+            
+            print(f"🔍 Debug - Report filters: Type={report_type_filter}, Period={period_filter}, Status={status_filter}")
+            
+            # Lọc dữ liệu
+            filtered_reports = []
+            for report in self.all_reports:
+                # Kiểm tra từng filter
+                if report_type_filter and report_type_filter != "Tất cả":
+                    if hasattr(report, 'report_type') and str(report.report_type) != report_type_filter:
+                        continue
+                
+                if period_filter and period_filter != "Tất cả":
+                    if hasattr(report, 'period') and str(report.period) != period_filter:
+                        continue
+                
+                if status_filter and status_filter != "Tất cả":
+                    if hasattr(report, 'status') and str(report.status) != status_filter:
+                        continue
+                
+                filtered_reports.append(report)
+            
+            # Cập nhật table với dữ liệu đã lọc
+            ReportActions.populate_report_tree(self.report_tree, filtered_reports)
+            self.update_status(f"Đã lọc {len(filtered_reports)}/{len(self.all_reports)} báo cáo", temp=True)
+            
+        except Exception as e:
+            print(f"❌ Filter reports error: {e}")
+            # Fallback to show all reports
+            ReportActions.populate_report_tree(self.report_tree, self.all_reports)
     
     # Task management methods
     def _add_task(self):
@@ -569,56 +759,197 @@ class MainApplication:
                     self._refresh_dashboard()
         except Exception as e:
             messagebox.showerror("Lỗi", f"Không thể xóa công việc: {e}")
+
+    def _view_task(self):
+        """Xem công việc"""
+        self._edit_task()  # Reuse edit for now
+
+    def _search_tasks(self, event=None):
+        """Tìm kiếm công việc"""
+        try:
+            search_term = getattr(self, 'task_search_var', tk.StringVar()).get()
+            if search_term and search_term != "Tìm kiếm công việc...":
+                # Implement search logic here
+                pass
+            self._refresh_tasks()
+        except Exception as e:
+            print(f"Search error: {e}")
+
+    def _export_tasks(self):
+        """Xuất danh sách công việc ra Excel"""
+        try:
+            if hasattr(self, 'task_tree') and self.all_tasks:
+                # Xuất công việc hiện tại đang hiển thị trên tree
+                file_path = TaskActions.export_visible_tasks_to_excel(self.task_tree, self.all_tasks)
+                if file_path:
+                    self.update_status(f"Đã xuất công việc thành công: {file_path}")
+            else:
+                messagebox.showwarning("Cảnh báo", "Không có dữ liệu công việc để xuất!")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể xuất công việc: {e}")
+            print(f"Export tasks error: {e}")
+
+    def _bulk_action_tasks(self, action):
+        """Thao tác hàng loạt cho công việc"""
+        try:
+            # Lấy các công việc được chọn từ enhanced table
+            if not hasattr(self, 'task_tree'):
+                messagebox.showwarning("Cảnh báo", "Không tìm thấy bảng công việc!")
+                return
+            
+            # Lấy danh sách ID được chọn từ checkbox
+            selected_ids = []
+            for item in self.task_tree.get_children():
+                values = self.task_tree.item(item)['values']
+                if len(values) > 0 and values[0] == '☑':  # Checkbox được chọn
+                    try:
+                        task_id = int(values[1])  # ID ở cột thứ 2
+                        selected_ids.append(task_id)
+                    except (ValueError, IndexError):
+                        continue
+            
+            if not selected_ids:
+                messagebox.showwarning("Cảnh báo", "Vui lòng chọn ít nhất một công việc!")
+                return
+            
+            # Thực hiện thao tác tương ứng
+            success_count = 0
+            if action == 'complete':
+                for task_id in selected_ids:
+                    try:
+                        # Cập nhật trạng thái thành 'completed' trong database
+                        task = self.task_controller.get_task_by_id(task_id)
+                        if task:
+                            from domain.entities.task import TaskStatus
+                            # Convert priority to Vietnamese display name
+                            priority_value = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+                            priority_display = {
+                                'low': 'Thấp',
+                                'medium': 'Trung bình', 
+                                'high': 'Cao',
+                                'urgent': 'Khẩn cấp'
+                            }.get(priority_value, 'Trung bình')
+                            
+                            # Chuyển đổi thành dictionary cho controller
+                            task_data = {
+                                'title': task.title,
+                                'description': getattr(task, 'description', ''),
+                                'priority': priority_display,
+                                'status': 'Hoàn thành',  # Use Vietnamese display name
+                                'assigned_to': str(getattr(task, 'assigned_to', '')),
+                                'due_date': task.due_date.strftime('%d/%m/%Y') if hasattr(task, 'due_date') and task.due_date else '',
+                                'progress_percentage': '100'
+                            }
+                            self.task_controller.update_task(task_id, task_data)
+                            success_count += 1
+                    except Exception as e:
+                        print(f"Error completing task {task_id}: {e}")
+                
+                messagebox.showinfo("Thành công", f"Đã hoàn thành {success_count}/{len(selected_ids)} công việc!")
+                
+            elif action == 'pause':
+                for task_id in selected_ids:
+                    try:
+                        # Cập nhật trạng thái thành 'on_hold' trong database
+                        task = self.task_controller.get_task_by_id(task_id)
+                        if task:
+                            from domain.entities.task import TaskStatus
+                            # Convert priority to Vietnamese display name
+                            priority_value = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+                            priority_display = {
+                                'low': 'Thấp',
+                                'medium': 'Trung bình', 
+                                'high': 'Cao',
+                                'urgent': 'Khẩn cấp'
+                            }.get(priority_value, 'Trung bình')
+                            
+                            # Chuyển đổi thành dictionary cho controller
+                            task_data = {
+                                'title': task.title,
+                                'description': getattr(task, 'description', ''),
+                                'priority': priority_display,
+                                'status': 'Tạm dừng',  # Use Vietnamese display name
+                                'assigned_to': str(getattr(task, 'assigned_to', '')),
+                                'due_date': task.due_date.strftime('%d/%m/%Y') if hasattr(task, 'due_date') and task.due_date else '',
+                                'progress_percentage': str(getattr(task, 'progress_percentage', 0))
+                            }
+                            self.task_controller.update_task(task_id, task_data)
+                            success_count += 1
+                    except Exception as e:
+                        print(f"Error pausing task {task_id}: {e}")
+                
+                messagebox.showinfo("Thành công", f"Đã tạm dừng {success_count}/{len(selected_ids)} công việc!")
+                
+            elif action == 'delete':
+                if messagebox.askyesno("Xác nhận", f"Bạn có chắc chắn muốn xóa {len(selected_ids)} công việc được chọn?"):
+                    for task_id in selected_ids:
+                        try:
+                            self.task_controller.delete_task(task_id)
+                            success_count += 1
+                        except Exception as e:
+                            print(f"Error deleting task {task_id}: {e}")
+                    
+                    messagebox.showinfo("Thành công", f"Đã xóa {success_count}/{len(selected_ids)} công việc!")
+            
+            # Làm mới danh sách
+            self._refresh_tasks()
+            
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể thực hiện thao tác: {e}")
+            print(f"Bulk action error: {e}")
     
     def _filter_tasks(self, event=None):
-        """Lọc công việc theo điều kiện"""
+        """Lọc công việc theo nhiều tiêu chí"""
         try:
-            # Get both filter values
-            priority_filter = self.task_filter_vars.get('ưu_tiên', tk.StringVar()).get()
-            status_filter = self.task_filter_vars.get('trạng_thái', tk.StringVar()).get()
+            # Lấy tất cả filter values
+            priority_filter = self.task_filter_vars.get('priority', tk.StringVar()).get()
+            status_filter = self.task_filter_vars.get('status', tk.StringVar()).get()
+            assignee_filter = self.task_filter_vars.get('assignee', tk.StringVar()).get()
             
-            print(f"🔍 Debug - Priority filter: {priority_filter}, Status filter: {status_filter}")
+            print(f"🔍 Debug - Task filters: Priority={priority_filter}, Status={status_filter}, Assignee={assignee_filter}")
             
-            # Start with all tasks
-            filtered_tasks = self.all_tasks[:]
-            
-            # Apply priority filter
-            if priority_filter and priority_filter != "Tất cả":
-                priority_mapping = {
-                    'Thấp': 'low',
-                    'Trung bình': 'medium', 
-                    'Cao': 'high',
-                    'Khẩn cấp': 'urgent'
-                }
-                db_priority = priority_mapping.get(priority_filter, priority_filter.lower())
-                
-                temp_filtered = []
-                for task in filtered_tasks:
+            # Lọc dữ liệu
+            filtered_tasks = []
+            for task in self.all_tasks:
+                # Kiểm tra từng filter
+                if priority_filter and priority_filter != "Tất cả":
+                    priority_mapping = {
+                        'Thấp': 'low',
+                        'Trung bình': 'medium', 
+                        'Cao': 'high',
+                        'Khẩn cấp': 'urgent'
+                    }
+                    db_priority = priority_mapping.get(priority_filter, priority_filter.lower())
                     task_priority = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
-                    if task_priority == db_priority:
-                        temp_filtered.append(task)
-                filtered_tasks = temp_filtered
-            
-            # Apply status filter
-            if status_filter and status_filter != "Tất cả":
-                status_mapping = {
-                    'Chờ thực hiện': 'not_started',
-                    'Đang thực hiện': 'in_progress',
-                    'Hoàn thành': 'completed',
-                    'Tạm dừng': 'on_hold'
-                }
-                db_status = status_mapping.get(status_filter, status_filter.lower())
+                    if task_priority != db_priority:
+                        continue
                 
-                temp_filtered = []
-                for task in filtered_tasks:
+                if status_filter and status_filter != "Tất cả":
+                    status_mapping = {
+                        'Chờ thực hiện': 'not_started',
+                        'Đang thực hiện': 'in_progress',
+                        'Hoàn thành': 'completed',
+                        'Tạm dừng': 'on_hold'
+                    }
+                    db_status = status_mapping.get(status_filter, status_filter.lower())
                     task_status = task.status.value if hasattr(task.status, 'value') else str(task.status)
-                    if task_status == db_status:
-                        temp_filtered.append(task)
-                filtered_tasks = temp_filtered
+                    if task_status != db_status:
+                        continue
+                
+                if assignee_filter and assignee_filter != "Tất cả":
+                    # TODO: Implement assignee filtering logic based on current user
+                    pass
+                
+                filtered_tasks.append(task)
             
-            # Update tree with filtered results
+            # Cập nhật table với dữ liệu đã lọc
             TaskActions.populate_task_tree(self.task_tree, filtered_tasks)
-            print(f"✅ Filtered {len(filtered_tasks)} tasks from {len(self.all_tasks)} total")
+            self.update_status(f"Đã lọc {len(filtered_tasks)}/{len(self.all_tasks)} công việc", temp=True)
+            
+        except Exception as e:
+            print(f"❌ Filter tasks error: {e}")
+            # Fallback to show all tasks
+            TaskActions.populate_task_tree(self.task_tree, self.all_tasks)
             
         except Exception as e:
             print(f"❌ Error filtering tasks: {e}")

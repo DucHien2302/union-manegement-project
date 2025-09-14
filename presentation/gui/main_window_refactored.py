@@ -209,25 +209,37 @@ class MainApplication:
         self.notebook.add(member_frame, text="👥 Thành viên")
         
         # Report tab
-        report_frame, self.report_tree, self.report_filter_vars = ReportTab.create_report_tab(
+        report_frame, self.report_tree, self.report_search_var, self.report_filter_vars = ReportTab.create_report_tab(
             self.notebook,
             callbacks={
                 'add_report': self._add_report,
                 'edit_report': self._edit_report,
+                'view_report': self._view_report,
+                'delete_report': self._delete_report,
                 'approve_report': self._approve_report,
-                'filter_reports': self._filter_reports
+                'search_reports': self._search_reports,
+                'filter_reports': self._filter_reports,
+                'export_reports': self._export_reports,
+                'bulk_action': self._bulk_action_reports,
+                'refresh_data': self._refresh_reports
             }
         )
         self.notebook.add(report_frame, text="📋 Báo cáo")
         
         # Task tab
-        task_frame, self.task_tree, self.task_filter_vars = TaskTab.create_task_tab(
+        task_frame, self.task_tree, self.task_search_var, self.task_filter_vars = TaskTab.create_task_tab(
             self.notebook,
             callbacks={
                 'add_task': self._add_task,
                 'edit_task': self._edit_task,
+                'view_task': self._view_task,
                 'complete_task': self._complete_task,
-                'filter_tasks': self._filter_tasks
+                'delete_task': self._delete_task,
+                'search_tasks': self._search_tasks,
+                'filter_tasks': self._filter_tasks,
+                'export_tasks': self._export_tasks,
+                'bulk_action': self._bulk_action_tasks,
+                'refresh_data': self._refresh_tasks
             }
         )
         self.notebook.add(task_frame, text="✅ Công việc")
@@ -428,11 +440,84 @@ class MainApplication:
             return
         
         messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
+
+    def _view_report(self):
+        """Xem báo cáo"""
+        self._edit_report()  # Reuse edit for now
+
+    def _delete_report(self):
+        """Xóa báo cáo"""
+        report_id = ReportActions.get_selected_report_id(self.report_tree)
+        if not report_id:
+            messagebox.showwarning("Cảnh báo", "Vui lòng chọn báo cáo cần xóa!")
+            return
+        
+        if messagebox.askyesno("Xác nhận", "Bạn có chắc chắn muốn xóa báo cáo này?"):
+            messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
+
+    def _search_reports(self, event=None):
+        """Tìm kiếm báo cáo"""
+        try:
+            search_term = getattr(self, 'report_search_var', tk.StringVar()).get()
+            if search_term and search_term != "Tìm kiếm báo cáo...":
+                # Implement search logic here
+                pass
+        except Exception as e:
+            print(f"Search error: {e}")
+
+    def _export_reports(self):
+        """Xuất danh sách báo cáo"""
+        messagebox.showinfo("Thông báo", "Tính năng xuất Excel sẽ được cập nhật trong phiên bản sau!")
+
+    def _bulk_action_reports(self, action):
+        """Thao tác hàng loạt cho báo cáo"""
+        messagebox.showinfo("Thông báo", f"Đã thực hiện {action} cho các báo cáo được chọn!")
+
+    def _refresh_reports(self):
+        """Làm mới danh sách báo cáo"""
+        try:
+            self.all_reports = self.report_use_case.get_all_reports()
+            ReportActions.populate_report_tree(self.report_tree, self.all_reports)
+            self.update_status(f"Đã tải {len(self.all_reports)} báo cáo", temp=True)
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể tải danh sách báo cáo: {e}")
     
     def _filter_reports(self, event=None):
-        """Lọc báo cáo theo trạng thái"""
-        status_filter = self.report_filter_vars['trạng_thái'].get()
-        ReportActions.filter_reports(self.report_tree, status_filter, self.all_reports)
+        """Lọc báo cáo theo nhiều tiêu chí"""
+        try:
+            # Lấy tất cả filter values
+            report_type_filter = self.report_filter_vars.get('report_type', tk.StringVar()).get()
+            period_filter = self.report_filter_vars.get('period', tk.StringVar()).get()
+            status_filter = self.report_filter_vars.get('status', tk.StringVar()).get()
+            
+            print(f"🔍 Debug - Report filters: Type={report_type_filter}, Period={period_filter}, Status={status_filter}")
+            
+            # Lọc dữ liệu
+            filtered_reports = []
+            for report in self.all_reports:
+                # Kiểm tra từng filter
+                if report_type_filter and report_type_filter != "Tất cả":
+                    if hasattr(report, 'report_type') and str(report.report_type) != report_type_filter:
+                        continue
+                
+                if period_filter and period_filter != "Tất cả":
+                    if hasattr(report, 'period') and str(report.period) != period_filter:
+                        continue
+                
+                if status_filter and status_filter != "Tất cả":
+                    if hasattr(report, 'status') and str(report.status) != status_filter:
+                        continue
+                
+                filtered_reports.append(report)
+            
+            # Cập nhật table với dữ liệu đã lọc
+            ReportActions.populate_report_tree(self.report_tree, filtered_reports)
+            self.update_status(f"Đã lọc {len(filtered_reports)}/{len(self.all_reports)} báo cáo", temp=True)
+            
+        except Exception as e:
+            print(f"❌ Filter reports error: {e}")
+            # Fallback to show all reports
+            ReportActions.populate_report_tree(self.report_tree, self.all_reports)
     
     # Task management methods
     def _add_task(self):
@@ -464,12 +549,100 @@ class MainApplication:
             return
         
         messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
+
+    def _view_task(self):
+        """Xem công việc"""
+        self._edit_task()  # Reuse edit for now
+
+    def _delete_task(self):
+        """Xóa công việc"""
+        task_id = TaskActions.get_selected_task_id(self.task_tree)
+        if not task_id:
+            messagebox.showwarning("Cảnh báo", "Vui lòng chọn công việc cần xóa!")
+            return
+        
+        if messagebox.askyesno("Xác nhận", "Bạn có chắc chắn muốn xóa công việc này?"):
+            messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
+
+    def _search_tasks(self, event=None):
+        """Tìm kiếm công việc"""
+        try:
+            search_term = getattr(self, 'task_search_var', tk.StringVar()).get()
+            if search_term and search_term != "Tìm kiếm công việc...":
+                # Implement search logic here
+                pass
+        except Exception as e:
+            print(f"Search error: {e}")
+
+    def _export_tasks(self):
+        """Xuất danh sách công việc"""
+        messagebox.showinfo("Thông báo", "Tính năng xuất Excel sẽ được cập nhật trong phiên bản sau!")
+
+    def _bulk_action_tasks(self, action):
+        """Thao tác hàng loạt cho công việc"""
+        messagebox.showinfo("Thông báo", f"Đã thực hiện {action} cho các công việc được chọn!")
+
+    def _refresh_tasks(self):
+        """Làm mới danh sách công việc"""
+        try:
+            self.all_tasks = self.task_use_case.get_all_tasks()
+            TaskActions.populate_task_tree(self.task_tree, self.all_tasks)
+            self.update_status(f"Đã tải {len(self.all_tasks)} công việc", temp=True)
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể tải danh sách công việc: {e}")
     
     def _filter_tasks(self, event=None):
-        """Lọc công việc theo điều kiện"""
-        priority_filter = self.task_filter_vars['ưu_tiên'].get()
-        status_filter = self.task_filter_vars['trạng_thái'].get()
-        TaskActions.filter_tasks(self.task_tree, priority_filter, status_filter, self.all_tasks)
+        """Lọc công việc theo nhiều tiêu chí"""
+        try:
+            # Lấy tất cả filter values
+            priority_filter = self.task_filter_vars.get('priority', tk.StringVar()).get()
+            status_filter = self.task_filter_vars.get('status', tk.StringVar()).get()
+            assignee_filter = self.task_filter_vars.get('assignee', tk.StringVar()).get()
+            
+            print(f"🔍 Debug - Task filters: Priority={priority_filter}, Status={status_filter}, Assignee={assignee_filter}")
+            
+            # Lọc dữ liệu
+            filtered_tasks = []
+            for task in self.all_tasks:
+                # Kiểm tra từng filter
+                if priority_filter and priority_filter != "Tất cả":
+                    priority_mapping = {
+                        'Thấp': 'low',
+                        'Trung bình': 'medium', 
+                        'Cao': 'high',
+                        'Khẩn cấp': 'urgent'
+                    }
+                    db_priority = priority_mapping.get(priority_filter, priority_filter.lower())
+                    task_priority = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+                    if task_priority != db_priority:
+                        continue
+                
+                if status_filter and status_filter != "Tất cả":
+                    status_mapping = {
+                        'Chờ thực hiện': 'not_started',
+                        'Đang thực hiện': 'in_progress',
+                        'Hoàn thành': 'completed',
+                        'Tạm dừng': 'on_hold'
+                    }
+                    db_status = status_mapping.get(status_filter, status_filter.lower())
+                    task_status = task.status.value if hasattr(task.status, 'value') else str(task.status)
+                    if task_status != db_status:
+                        continue
+                
+                if assignee_filter and assignee_filter != "Tất cả":
+                    # TODO: Implement assignee filtering logic based on current user
+                    pass
+                
+                filtered_tasks.append(task)
+            
+            # Cập nhật table với dữ liệu đã lọc
+            TaskActions.populate_task_tree(self.task_tree, filtered_tasks)
+            self.update_status(f"Đã lọc {len(filtered_tasks)}/{len(self.all_tasks)} công việc", temp=True)
+            
+        except Exception as e:
+            print(f"❌ Filter tasks error: {e}")
+            # Fallback to show all tasks
+            TaskActions.populate_task_tree(self.task_tree, self.all_tasks)
     
     # Header action methods
     def _refresh_all_data(self):

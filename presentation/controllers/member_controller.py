@@ -12,7 +12,7 @@ from domain.entities.member import Member, MemberType, MemberStatus
 from application.use_cases.member_management import MemberManagementUseCase
 from infrastructure.repositories.member_repository_impl import MemberRepository
 from presentation.gui.member_components import (
-    MemberTab, MemberForm, MemberActions, MemberExport, 
+    MemberTab, MemberForm, MemberActions, 
     MemberFilters, MemberStats
 )
 
@@ -271,25 +271,24 @@ class MemberController:
             self._show_error(f"Lỗi thao tác hàng loạt", str(e))
     
     def export_members(self):
-        """Xuất danh sách thành viên"""
+        """Xuất danh sách thành viên ra Excel"""
         try:
             if not self.filtered_members:
                 messagebox.showwarning("Cảnh báo", "Không có dữ liệu để xuất")
                 return
             
-            filename = filedialog.asksaveasfilename(
-                parent=self.parent,
-                title="Xuất danh sách thành viên",
-                defaultextension=".csv",
-                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+            # Xuất trực tiếp thành viên đang hiển thị ra Excel
+            file_path = MemberActions.export_visible_members_to_excel(
+                self.member_tree, 
+                self.all_members, 
+                enhanced_mode=True
             )
             
-            if filename:
-                MemberExport.export_to_csv(self.parent, self.filtered_members, filename)
-                self._update_status(f"Đã xuất {len(self.filtered_members)} thành viên", "success")
+            if file_path:
+                self._update_status(f"Đã xuất {len(self.filtered_members)} thành viên ra Excel", "success")
             
         except Exception as e:
-            self._show_error("Lỗi xuất file", str(e))
+            self._show_error("Lỗi xuất file Excel", str(e))
     
     def _apply_current_filters(self):
         """Áp dụng các bộ lọc hiện tại"""

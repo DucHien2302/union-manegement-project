@@ -9,6 +9,7 @@ from tkinter import ttk
 from typing import Callable, List, Tuple, Optional, Dict, Any
 from presentation.gui.theme import ModernTheme
 from presentation.gui.base_components import BaseHeader, BaseTable, BaseFilter
+from application.services.excel_service import ExcelExportService
 
 
 class ReportTable:
@@ -36,43 +37,249 @@ class ReportTable:
         
         return tree, container
 
-
-class ReportFilter:
-    """Report filter component"""
-    
     @staticmethod
-    def create_report_filter(parent, filter_callback: Callable = None) -> Dict[str, tk.StringVar]:
+    def create_enhanced_report_table(parent) -> Tuple[ttk.Treeview, tk.Frame]:
         """
-        Create report filter section
+        Create enhanced report table with checkboxes and better styling
         
         Args:
             parent: Parent widget
-            filter_callback: Filter callback function
+            
+        Returns:
+            Tuple of (treeview, container_frame)
+        """
+        columns = ('☐', 'ID', 'Tiêu đề', 'Loại', 'Kỳ', 'Trạng thái', 'Ngày tạo')
+        column_widths = {
+            '☐': 40, 'ID': 60, 'Tiêu đề': 300, 'Loại': 140, 'Kỳ': 120, 
+            'Trạng thái': 150, 'Ngày tạo': 120
+        }
+        
+        # Configure table style
+        style = ttk.Style()
+        style.configure("Treeview", font=("Arial", 11), rowheight=30)
+        style.configure("Treeview.Heading", font=("Arial", 11, "bold"))
+        
+        tree, container = BaseTable.create_modern_table(parent, columns, column_widths)
+        tree.configure(height=20)  # Match member enhanced table height
+        
+        # Enhanced checkbox functionality
+        selected_items = set()
+        
+        def on_item_click(event):
+            """Handle checkbox toggle on item click"""
+            item = tree.identify('item', event.x, event.y)
+            column = tree.identify('column', event.x, event.y)
+            
+            if item and column == '#1':  # Checkbox column
+                if item in selected_items:
+                    selected_items.remove(item)
+                    tree.set(item, '☐', '☐')
+                else:
+                    selected_items.add(item)
+                    tree.set(item, '☐', '☑')
+                return "break"
+        
+        def toggle_all_selection():
+            """Toggle selection of all items"""
+            if len(selected_items) == len(tree.get_children()):
+                # Unselect all
+                selected_items.clear()
+                for item in tree.get_children():
+                    tree.set(item, '☐', '☐')
+            else:
+                # Select all
+                selected_items.clear()
+                for item in tree.get_children():
+                    selected_items.add(item)
+                    tree.set(item, '☐', '☑')
+        
+        # Bind events
+        tree.bind('<Button-1>', on_item_click)
+        tree.bind('<Double-Button-1>', lambda e: "break")
+        
+        # Store selected_items in tree for access from other methods
+        tree.selected_items = selected_items
+        
+        # Configure tags for different statuses - matching member styling
+        tree.tag_configure('oddrow', background='#f8f9fa')
+        tree.tag_configure('evenrow', background='white')
+        tree.tag_configure('selected', background='#e3f2fd')
+        
+        # Status-based styling using foreground colors like member table
+        tree.tag_configure('approved', foreground='#2e7d32')   # Green like active members
+        tree.tag_configure('submitted', foreground='#1565c0')  # Blue for submitted
+        tree.tag_configure('draft', foreground='#f57c00')      # Orange like inactive members
+        tree.tag_configure('rejected', foreground='#d32f2f')   # Red like suspended members
+        tree.tag_configure('in_review', foreground='#6a1b9a')  # Purple for in review
+        tree.tag_configure('normal', foreground='#374151')
+        
+        return tree, container
+
+
+class ReportSearch:
+    """Report search component"""
+    
+    @staticmethod
+    def create_report_search(parent, search_callback: Callable = None) -> Tuple[tk.Entry, tk.StringVar]:
+        """
+        Create compact report search box
+        
+        Args:
+            parent: Parent widget
+            search_callback: Search callback function
+            
+        Returns:
+            Tuple of (entry_widget, string_var)
+        """
+        # Create search variable
+        search_var = tk.StringVar()
+        
+        # Create compact search entry
+        search_entry = tk.Entry(parent, textvariable=search_var,
+                               font=("Arial", 10),
+                               bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
+                               relief=tk.FLAT, bd=1, width=40)
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        # Placeholder text
+        def on_focus_in(event):
+            if search_var.get() == "Tìm kiếm báo cáo...":
+                search_var.set("")
+                search_entry.config(fg=ModernTheme.GRAY_900)
+        
+        def on_focus_out(event):
+            if not search_var.get():
+                search_var.set("Tìm kiếm báo cáo...")
+                search_entry.config(fg=ModernTheme.GRAY_500)
+        
+        # Set initial placeholder
+        search_var.set("Tìm kiếm báo cáo...")
+        search_entry.config(fg=ModernTheme.GRAY_500)
+        
+        # Bind events
+        search_entry.bind("<FocusIn>", on_focus_in)
+        search_entry.bind("<FocusOut>", on_focus_out)
+        
+        if search_callback:
+            search_entry.bind("<KeyRelease>", search_callback)
+        
+        return search_entry, search_var
+
+
+class ReportFilters:
+    """Advanced filtering component for report list"""
+    
+    @staticmethod
+    def create_filter_panel(parent, filter_callback: Callable = None) -> Dict[str, tk.StringVar]:
+        """
+        Create advanced filter panel for reports
+        
+        Args:
+            parent: Parent widget
+            filter_callback: Callback function when filters change
             
         Returns:
             Dict of filter variables
         """
-        filters = [
-            ("Trạng thái", ["Tất cả", "Nháp", "Đã nộp", "Đã duyệt", "Từ chối"], filter_callback)
-        ]
+        filter_frame = tk.LabelFrame(parent, text="🔍 Bộ lọc", 
+                                   font=("Arial", 9, "bold"),
+                                   bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700,
+                                   padx=10, pady=5)
+        filter_frame.pack(fill=tk.X, padx=20, pady=(0, 5))
         
-        return BaseFilter.create_filter_section(parent, filters)
+        filters = {}
+        
+        # Filter row
+        filter_row = tk.Frame(filter_frame, bg=ModernTheme.WHITE)
+        filter_row.pack(fill=tk.X)
+        
+        # Report type filter
+        type_frame = tk.Frame(filter_row, bg=ModernTheme.WHITE)
+        type_frame.pack(side=tk.LEFT, padx=(0, 8))
+        
+        tk.Label(type_frame, text="Loại báo cáo:", 
+                font=("Arial", 8),
+                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700).pack()
+        
+        type_var = tk.StringVar()
+        type_combo = ttk.Combobox(type_frame, textvariable=type_var, 
+                                 values=["Tất cả", "Hoạt động", "Tài chính", "Nhân sự", "Kế hoạch"],
+                                 state="readonly", width=12, font=("Arial", 8))
+        type_combo.pack()
+        type_combo.set("Tất cả")
+        filters['report_type'] = type_var
+        
+        # Period filter
+        period_frame = tk.Frame(filter_row, bg=ModernTheme.WHITE)
+        period_frame.pack(side=tk.LEFT, padx=(0, 8))
+        
+        tk.Label(period_frame, text="Kỳ báo cáo:", 
+                font=("Arial", 8),
+                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700).pack()
+        
+        period_var = tk.StringVar()
+        period_combo = ttk.Combobox(period_frame, textvariable=period_var,
+                                   values=["Tất cả", "Tuần", "Tháng", "Quý", "Năm"],
+                                   state="readonly", width=10, font=("Arial", 8))
+        period_combo.pack()
+        period_combo.set("Tất cả")
+        filters['period'] = period_var
+        
+        # Status filter
+        status_frame = tk.Frame(filter_row, bg=ModernTheme.WHITE)
+        status_frame.pack(side=tk.LEFT, padx=(0, 8))
+        
+        tk.Label(status_frame, text="Trạng thái:", 
+                font=("Arial", 8),
+                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700).pack()
+        
+        status_var = tk.StringVar()
+        status_combo = ttk.Combobox(status_frame, textvariable=status_var,
+                                   values=["Tất cả", "Nháp", "Đã nộp", "Đã duyệt", "Từ chối"],
+                                   state="readonly", width=10, font=("Arial", 8))
+        status_combo.pack()
+        status_combo.set("Tất cả")
+        filters['status'] = status_var
+        
+        # Apply filter button
+        apply_btn = tk.Button(filter_row, text="Áp dụng", 
+                             font=("Arial", 8),
+                             bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
+                             border=0, cursor="hand2", padx=12, pady=3,
+                             command=filter_callback if filter_callback else lambda: None)
+        apply_btn.pack(side=tk.LEFT, padx=(8, 0))
+        
+        # Clear filter button
+        def clear_filters():
+            for var in filters.values():
+                var.set("Tất cả")
+            if filter_callback:
+                filter_callback()
+        
+        clear_btn = tk.Button(filter_row, text="Xóa", 
+                             font=("Arial", 8),
+                             bg=ModernTheme.GRAY_200, fg=ModernTheme.GRAY_700,
+                             border=0, cursor="hand2", padx=12, pady=3,
+                             command=clear_filters)
+        clear_btn.pack(side=tk.LEFT, padx=(3, 0))
+        
+        return filters
 
 
 class ReportTab:
     """Complete report management tab component"""
     
     @staticmethod
-    def create_report_tab(parent, callbacks: Dict[str, Callable] = None) -> Tuple[tk.Frame, ttk.Treeview, Dict[str, tk.StringVar]]:
+    def create_report_tab(parent, callbacks: Dict[str, Callable] = None) -> Tuple[tk.Frame, ttk.Treeview, tk.StringVar, Dict[str, tk.StringVar]]:
         """
-        Create complete report management tab
+        Create complete report management tab with enhanced layout
         
         Args:
             parent: Parent widget (usually notebook)
             callbacks: Dict of callback functions for actions
             
         Returns:
-            Tuple of (report_frame, report_tree, filter_vars)
+            Tuple of (report_frame, report_tree, search_var, filter_vars)
         """
         report_frame = ttk.Frame(parent)
         
@@ -80,16 +287,26 @@ class ReportTab:
         default_callbacks = {
             'add_report': lambda: None,
             'edit_report': lambda: None,
+            'view_report': lambda: None,
+            'delete_report': lambda: None,
             'approve_report': lambda: None,
-            'filter_reports': lambda e=None: None
+            'search_reports': lambda e=None: None,
+            'filter_reports': lambda: None,
+            'export_reports': lambda: None,
+            'bulk_action': lambda action: None,
+            'refresh_data': lambda: None
         }
         if callbacks:
             default_callbacks.update(callbacks)
         
-        # Header with actions
+        # Header with enhanced actions
         actions = [
-            ("👁️ Xem/Sửa", default_callbacks['edit_report']),
+            ("👁️ Xem", default_callbacks['view_report']),
+            ("✏️ Sửa", default_callbacks['edit_report']),
             ("✅ Duyệt", default_callbacks['approve_report']),
+            ("🗑️ Xóa", default_callbacks['delete_report']),
+            ("📊 Xuất Excel", default_callbacks['export_reports']),
+            ("🔄 Làm mới", default_callbacks['refresh_data']),
             ("📝 Tạo báo cáo", default_callbacks['add_report'])
         ]
         BaseHeader.create_header(report_frame, "Quản lý Báo cáo", actions)
@@ -98,21 +315,92 @@ class ReportTab:
         content_frame = tk.Frame(report_frame, bg=ModernTheme.GRAY_50)
         content_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Filter section
-        filter_vars = ReportFilter.create_report_filter(
-            content_frame, default_callbacks['filter_reports'])
+        # Advanced filters
+        filter_vars = ReportFilters.create_filter_panel(content_frame, default_callbacks['filter_reports'])
         
-        # Table container
+        # Search section - Thu nhỏ lại
+        search_frame = tk.Frame(content_frame, bg=ModernTheme.WHITE)
+        search_frame.pack(fill=tk.X, padx=20, pady=(0, 5))
+        
+        search_container = tk.Frame(search_frame, bg=ModernTheme.WHITE)
+        search_container.pack(fill=tk.X, padx=15, pady=5)
+        
+        # Tạo search box nhỏ gọn hơn
+        search_label = tk.Label(search_container, text="🔍 Tìm kiếm:", 
+                               font=("Arial", 10),
+                               bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700)
+        search_label.pack(side=tk.LEFT, padx=(0, 10))
+        
+        search_entry, search_var = ReportSearch.create_report_search(
+            search_container, default_callbacks['search_reports'])
+        search_entry.configure(width=40)  # Giới hạn độ rộng
+        
+        # Bulk actions panel - Thu nhỏ lại
+        bulk_frame = tk.Frame(content_frame, bg=ModernTheme.WHITE)
+        bulk_frame.pack(fill=tk.X, padx=20, pady=(0, 5))
+        
+        bulk_container = tk.Frame(bulk_frame, bg=ModernTheme.WHITE)
+        bulk_container.pack(fill=tk.X, padx=15, pady=5)
+        
+        tk.Label(bulk_container, text="Thao tác hàng loạt:", 
+                font=("Arial", 9, "bold"),
+                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700).pack(side=tk.LEFT)
+        
+        bulk_actions = [
+            ("Duyệt", lambda: default_callbacks['bulk_action']('approve')),
+            ("Từ chối", lambda: default_callbacks['bulk_action']('reject')),
+            ("Xóa được chọn", lambda: default_callbacks['bulk_action']('delete'))
+        ]
+        
+        for text, command in bulk_actions:
+            btn = tk.Button(bulk_container, text=text, 
+                           font=("Arial", 8),
+                           bg=ModernTheme.GRAY_200, fg=ModernTheme.GRAY_700,
+                           border=0, cursor="hand2", padx=10, pady=4,
+                           command=command)
+            btn.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Table container - Tăng kích thước
         table_container = tk.Frame(content_frame, bg=ModernTheme.WHITE)
         table_container.pack(fill=tk.BOTH, expand=True, 
-                            padx=ModernTheme.PADDING_MEDIUM, 
-                            pady=(0, ModernTheme.PADDING_MEDIUM))
+                            padx=20, pady=(0, 10))
         
-        # Create report table
-        report_tree, tree_container = ReportTable.create_report_table(table_container)
-        tree_container.pack(fill=tk.BOTH, expand=True)
+        # Create enhanced report table
+        report_tree, tree_container = ReportTable.create_enhanced_report_table(table_container)
+        tree_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        return report_frame, report_tree, filter_vars
+        # Context menu for table
+        context_menu = tk.Menu(report_tree, tearoff=0)
+        context_menu.add_command(label="👁️ Xem chi tiết", command=default_callbacks['view_report'])
+        context_menu.add_command(label="✏️ Chỉnh sửa", command=default_callbacks['edit_report'])
+        context_menu.add_separator()
+        context_menu.add_command(label="✅ Duyệt", command=default_callbacks['approve_report'])
+        context_menu.add_command(label="🗑️ Xóa", command=default_callbacks['delete_report'])
+        
+        def show_context_menu(event):
+            try:
+                context_menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                context_menu.grab_release()
+        
+        report_tree.bind("<Button-3>", show_context_menu)  # Right click
+        report_tree.bind("<Double-1>", lambda e: default_callbacks['view_report']())  # Double click
+        
+        # Status bar
+        status_frame = tk.Frame(report_frame, bg=ModernTheme.GRAY_100, height=30)
+        status_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        status_frame.pack_propagate(False)
+        
+        status_label = tk.Label(status_frame, text="Sẵn sàng", 
+                               font=("Arial", 9),
+                               bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_600,
+                               anchor=tk.W)
+        status_label.pack(side=tk.LEFT, padx=10, pady=5)
+        
+        # Store references for external access
+        report_frame.status_label = status_label
+        
+        return report_frame, report_tree, search_var, filter_vars
 
 
 class ReportForm:
@@ -647,7 +935,7 @@ class ReportActions:
     @staticmethod
     def populate_report_tree(tree: ttk.Treeview, reports: List[Any]):
         """
-        Populate report tree with data
+        Populate report tree with data and apply styling based on status
         
         Args:
             tree: Treeview widget
@@ -656,6 +944,10 @@ class ReportActions:
         # Clear existing items
         for item in tree.get_children():
             tree.delete(item)
+        
+        # Clear selected items if enhanced table has this property
+        if hasattr(tree, 'selected_items'):
+            tree.selected_items.clear()
         
         # Mapping for user-friendly display
         report_type_display = {
@@ -677,10 +969,10 @@ class ReportActions:
         # Add reports
         if not reports:
             # Show empty state
-            tree.insert('', 'end', values=('', '📭 Không có báo cáo nào', '', '', '', ''))
+            tree.insert('', 'end', values=('☐', '', '📭 Không có báo cáo nào', '', '', '', ''))
             return
             
-        for report in reports:
+        for i, report in enumerate(reports):
             # Format report type and status for better display
             report_type_str = report.report_type.value if hasattr(report.report_type, 'value') else str(report.report_type)
             status_str = report.status.value if hasattr(report.status, 'value') else str(report.status)
@@ -692,14 +984,31 @@ class ReportActions:
             # Format date
             created_date = report.created_at.strftime('%d/%m/%Y') if hasattr(report, 'created_at') and report.created_at else ''
             
+            # Determine row tags based on status - similar to member styling
+            tags = []
+            tags.append('oddrow' if i % 2 else 'evenrow')
+            
+            # Status-based styling
+            if status_str in ["approved", "Đã duyệt"]:
+                tags.append('approved')
+            elif status_str in ["rejected", "Từ chối"]:
+                tags.append('rejected')
+            elif status_str in ["submitted", "Đã nộp"]:
+                tags.append('submitted')
+            elif status_str in ["draft", "Nháp"]:
+                tags.append('draft')
+            else:
+                tags.append('normal')
+            
             tree.insert('', 'end', values=(
+                '☐',  # Checkbox for enhanced mode
                 report.id,
                 report.title or "",
                 report_type_display_str,
                 report.period or "",
                 status_display_str,
                 created_date
-            ))
+            ), tags=tags)
     
     @staticmethod
     def get_selected_report_id(tree: ttk.Treeview) -> Optional[int]:
@@ -715,7 +1024,7 @@ class ReportActions:
         selection = tree.selection()
         if selection:
             item = tree.item(selection[0])
-            return int(item['values'][0])  # ID is first column
+            return int(item['values'][1])  # ID is second column (index 1) due to checkbox in column 0
         return None
     
     @staticmethod
@@ -761,4 +1070,48 @@ class ReportActions:
         
         # Populate with filtered results
         ReportActions.populate_report_tree(tree, filtered_reports)
-        ReportActions.populate_report_tree(tree, filtered_reports)
+    
+    @staticmethod
+    def export_reports_to_excel(reports: List[Any]) -> str:
+        """
+        Export reports to Excel file
+        
+        Args:
+            reports: List of report objects to export
+            
+        Returns:
+            str: Path to the exported file
+        """
+        return ExcelExportService.export_reports_to_excel(reports)
+    
+    @staticmethod
+    def export_visible_reports_to_excel(tree: ttk.Treeview, all_reports: List[Any]) -> str:
+        """
+        Export currently visible reports in tree to Excel
+        
+        Args:
+            tree: Treeview widget
+            all_reports: All available reports
+            
+        Returns:
+            str: Path to the exported file
+        """
+        # Get visible report IDs from tree
+        visible_ids = []
+        for item in tree.get_children():
+            values = tree.item(item)['values']
+            if len(values) > 1 and values[1]:  # Check if ID exists
+                try:
+                    visible_ids.append(int(values[1]))
+                except (ValueError, IndexError):
+                    continue
+        
+        # Filter reports to only include visible ones
+        visible_reports = [report for report in all_reports if getattr(report, 'id', None) in visible_ids]
+        
+        if not visible_reports:
+            from tkinter import messagebox
+            messagebox.showwarning("Cảnh báo", "Không có báo cáo nào để xuất!")
+            return ""
+        
+        return ExcelExportService.export_reports_to_excel(visible_reports)

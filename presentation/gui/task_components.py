@@ -9,6 +9,7 @@ from tkinter import ttk
 from typing import Callable, List, Tuple, Optional, Dict, Any
 from presentation.gui.theme import ModernTheme
 from presentation.gui.base_components import BaseHeader, BaseTable, BaseFilter
+from application.services.excel_service import ExcelExportService
 
 
 class TaskTable:
@@ -34,55 +35,276 @@ class TaskTable:
         tree, container = BaseTable.create_modern_table(parent, columns, column_widths)
         tree.configure(height=15)
         
-        # Additional tags for task priorities and status
-        tree.tag_configure('high_priority', background='#fef2f2', foreground='#dc2626')
-        tree.tag_configure('medium_priority', background='#fffbeb', foreground='#d97706')
-        tree.tag_configure('low_priority', background='#f0f9ff', foreground='#0369a1')
-        tree.tag_configure('normal', background='#ffffff', foreground='#374151')
-        tree.tag_configure('overdue', background='#fef2f2', foreground='#991b1b')
-        tree.tag_configure('completed', background='#f0fdf4', foreground='#166534')
-        tree.tag_configure('cancelled', background='#f9fafb', foreground='#6b7280')
+        # Status and priority tags using foreground colors like member table
+        tree.tag_configure('oddrow', background='#f8f9fa')
+        tree.tag_configure('evenrow', background='white')
+        tree.tag_configure('selected', background='#e3f2fd')
+        
+        # Status-based styling using foreground colors like member table
+        tree.tag_configure('completed', foreground='#2e7d32')   # Green like active members
+        tree.tag_configure('in_progress', foreground='#1565c0') # Blue for in progress
+        tree.tag_configure('pending', foreground='#f57c00')     # Orange like inactive members
+        tree.tag_configure('paused', foreground='#6a1b9a')      # Purple for paused
+        tree.tag_configure('cancelled', foreground='#d32f2f')   # Red like suspended members
+        tree.tag_configure('overdue', foreground='#bf360c')     # Dark red for overdue
+        
+        # Priority-based styling (secondary colors)
+        tree.tag_configure('high_priority', foreground='#dc2626')
+        tree.tag_configure('medium_priority', foreground='#d97706') 
+        tree.tag_configure('low_priority', foreground='#0369a1')
+        tree.tag_configure('normal', foreground='#374151')
+        
+        return tree, container
+
+    @staticmethod
+    def create_enhanced_task_table(parent) -> Tuple[ttk.Treeview, tk.Frame]:
+        """
+        Create enhanced task table with checkboxes and better styling
+        
+        Args:
+            parent: Parent widget
+            
+        Returns:
+            Tuple of (treeview, container_frame)
+        """
+        columns = ('☐', 'ID', 'Tiêu đề', 'Ưu tiên', 'Trạng thái', 'Người thực hiện', 'Hạn hoàn thành', 'Tiến độ')
+        column_widths = {
+            '☐': 40, 'ID': 60, 'Tiêu đề': 220, 'Ưu tiên': 120, 'Trạng thái': 140, 
+            'Người thực hiện': 130, 'Hạn hoàn thành': 120, 'Tiến độ': 80
+        }
+        
+        # Configure table style
+        style = ttk.Style()
+        style.configure("Treeview", font=("Arial", 11), rowheight=30)
+        style.configure("Treeview.Heading", font=("Arial", 11, "bold"))
+        
+        tree, container = BaseTable.create_modern_table(parent, columns, column_widths)
+        tree.configure(height=20)  # Match member enhanced table height
+        
+        # Enhanced checkbox functionality
+        selected_items = set()
+        
+        def on_item_click(event):
+            """Handle checkbox toggle on item click"""
+            item = tree.identify('item', event.x, event.y)
+            column = tree.identify('column', event.x, event.y)
+            
+            if item and column == '#1':  # Checkbox column
+                if item in selected_items:
+                    selected_items.remove(item)
+                    tree.set(item, '☐', '☐')
+                else:
+                    selected_items.add(item)
+                    tree.set(item, '☐', '☑')
+                return "break"
+        
+        def toggle_all_selection():
+            """Toggle selection of all items"""
+            if len(selected_items) == len(tree.get_children()):
+                # Unselect all
+                selected_items.clear()
+                for item in tree.get_children():
+                    tree.set(item, '☐', '☐')
+            else:
+                # Select all
+                selected_items.clear()
+                for item in tree.get_children():
+                    selected_items.add(item)
+                    tree.set(item, '☐', '☑')
+        
+        # Bind events
+        tree.bind('<Button-1>', on_item_click)
+        tree.bind('<Double-Button-1>', lambda e: "break")
+        
+        # Store selected_items in tree for access from other methods
+        tree.selected_items = selected_items
+        
+        # Additional tags for task priorities and status - matching member styling
+        tree.tag_configure('oddrow', background='#f8f9fa')
+        tree.tag_configure('evenrow', background='white')
+        tree.tag_configure('selected', background='#e3f2fd')
+        
+        # Status-based styling using foreground colors like member table (primary)
+        tree.tag_configure('completed', foreground='#2e7d32')   # Green like active members
+        tree.tag_configure('in_progress', foreground='#1565c0') # Blue for in progress
+        tree.tag_configure('pending', foreground='#f57c00')     # Orange like inactive members
+        tree.tag_configure('paused', foreground='#6a1b9a')      # Purple for paused
+        tree.tag_configure('cancelled', foreground='#d32f2f')   # Red like suspended members
+        tree.tag_configure('overdue', foreground='#bf360c')     # Dark red for overdue
+        
+        # Priority-based styling (secondary, lighter colors)
+        tree.tag_configure('high_priority', foreground='#dc2626')
+        tree.tag_configure('medium_priority', foreground='#d97706') 
+        tree.tag_configure('low_priority', foreground='#0369a1')
+        tree.tag_configure('normal', foreground='#374151')
         
         return tree, container
 
 
-class TaskFilter:
-    """Task filter component with priority and status filters"""
+class TaskSearch:
+    """Task search component"""
     
     @staticmethod
-    def create_task_filter(parent, filter_callback: Callable = None) -> Dict[str, tk.StringVar]:
+    def create_task_search(parent, search_callback: Callable = None) -> Tuple[tk.Entry, tk.StringVar]:
         """
-        Create task filter section with priority and status filters
+        Create compact task search box
         
         Args:
             parent: Parent widget
-            filter_callback: Filter callback function
+            search_callback: Search callback function
+            
+        Returns:
+            Tuple of (entry_widget, string_var)
+        """
+        # Create search variable
+        search_var = tk.StringVar()
+        
+        # Create compact search entry
+        search_entry = tk.Entry(parent, textvariable=search_var,
+                               font=("Arial", 10),
+                               bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
+                               relief=tk.FLAT, bd=1, width=40)
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        # Placeholder text
+        def on_focus_in(event):
+            if search_var.get() == "Tìm kiếm công việc...":
+                search_var.set("")
+                search_entry.config(fg=ModernTheme.GRAY_900)
+        
+        def on_focus_out(event):
+            if not search_var.get():
+                search_var.set("Tìm kiếm công việc...")
+                search_entry.config(fg=ModernTheme.GRAY_500)
+        
+        # Set initial placeholder
+        search_var.set("Tìm kiếm công việc...")
+        search_entry.config(fg=ModernTheme.GRAY_500)
+        
+        # Bind events
+        search_entry.bind("<FocusIn>", on_focus_in)
+        search_entry.bind("<FocusOut>", on_focus_out)
+        
+        if search_callback:
+            search_entry.bind("<KeyRelease>", search_callback)
+        
+        return search_entry, search_var
+
+
+class TaskFilters:
+    """Advanced filtering component for task list"""
+    
+    @staticmethod
+    def create_filter_panel(parent, filter_callback: Callable = None) -> Dict[str, tk.StringVar]:
+        """
+        Create advanced filter panel for tasks
+        
+        Args:
+            parent: Parent widget
+            filter_callback: Callback function when filters change
             
         Returns:
             Dict of filter variables
         """
-        filters = [
-            ("Ưu tiên", ["Tất cả", "Thấp", "Trung bình", "Cao", "Khẩn cấp"], filter_callback),
-            ("Trạng thái", ["Tất cả", "Chờ thực hiện", "Đang thực hiện", "Hoàn thành", "Tạm dừng"], filter_callback)
-        ]
+        filter_frame = tk.LabelFrame(parent, text="🔍 Bộ lọc", 
+                                   font=("Arial", 9, "bold"),
+                                   bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700,
+                                   padx=10, pady=5)
+        filter_frame.pack(fill=tk.X, padx=20, pady=(0, 5))
         
-        return BaseFilter.create_filter_section(parent, filters)
+        filters = {}
+        
+        # Filter row
+        filter_row = tk.Frame(filter_frame, bg=ModernTheme.WHITE)
+        filter_row.pack(fill=tk.X)
+        
+        # Priority filter
+        priority_frame = tk.Frame(filter_row, bg=ModernTheme.WHITE)
+        priority_frame.pack(side=tk.LEFT, padx=(0, 8))
+        
+        tk.Label(priority_frame, text="Ưu tiên:", 
+                font=("Arial", 8),
+                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700).pack()
+        
+        priority_var = tk.StringVar()
+        priority_combo = ttk.Combobox(priority_frame, textvariable=priority_var, 
+                                     values=["Tất cả", "Thấp", "Trung bình", "Cao", "Khẩn cấp"],
+                                     state="readonly", width=10, font=("Arial", 8))
+        priority_combo.pack()
+        priority_combo.set("Tất cả")
+        filters['priority'] = priority_var
+        
+        # Status filter
+        status_frame = tk.Frame(filter_row, bg=ModernTheme.WHITE)
+        status_frame.pack(side=tk.LEFT, padx=(0, 8))
+        
+        tk.Label(status_frame, text="Trạng thái:", 
+                font=("Arial", 8),
+                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700).pack()
+        
+        status_var = tk.StringVar()
+        status_combo = ttk.Combobox(status_frame, textvariable=status_var,
+                                   values=["Tất cả", "Chờ thực hiện", "Đang thực hiện", "Hoàn thành", "Tạm dừng"],
+                                   state="readonly", width=12, font=("Arial", 8))
+        status_combo.pack()
+        status_combo.set("Tất cả")
+        filters['status'] = status_var
+        
+        # Assignee filter
+        assignee_frame = tk.Frame(filter_row, bg=ModernTheme.WHITE)
+        assignee_frame.pack(side=tk.LEFT, padx=(0, 8))
+        
+        tk.Label(assignee_frame, text="Người thực hiện:", 
+                font=("Arial", 8),
+                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700).pack()
+        
+        assignee_var = tk.StringVar()
+        assignee_combo = ttk.Combobox(assignee_frame, textvariable=assignee_var,
+                                     values=["Tất cả", "Tôi", "Nhóm của tôi", "Khác"],
+                                     state="readonly", width=12, font=("Arial", 8))
+        assignee_combo.pack()
+        assignee_combo.set("Tất cả")
+        filters['assignee'] = assignee_var
+        
+        # Apply filter button
+        apply_btn = tk.Button(filter_row, text="Áp dụng", 
+                             font=("Arial", 8),
+                             bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
+                             border=0, cursor="hand2", padx=12, pady=3,
+                             command=filter_callback if filter_callback else lambda: None)
+        apply_btn.pack(side=tk.LEFT, padx=(8, 0))
+        
+        # Clear filter button
+        def clear_filters():
+            for var in filters.values():
+                var.set("Tất cả")
+            if filter_callback:
+                filter_callback()
+        
+        clear_btn = tk.Button(filter_row, text="Xóa", 
+                             font=("Arial", 8),
+                             bg=ModernTheme.GRAY_200, fg=ModernTheme.GRAY_700,
+                             border=0, cursor="hand2", padx=12, pady=3,
+                             command=clear_filters)
+        clear_btn.pack(side=tk.LEFT, padx=(3, 0))
+        
+        return filters
 
 
 class TaskTab:
     """Complete task management tab component"""
     
     @staticmethod
-    def create_task_tab(parent, callbacks: Dict[str, Callable] = None) -> Tuple[tk.Frame, ttk.Treeview, Dict[str, tk.StringVar]]:
+    def create_task_tab(parent, callbacks: Dict[str, Callable] = None) -> Tuple[tk.Frame, ttk.Treeview, tk.StringVar, Dict[str, tk.StringVar]]:
         """
-        Create complete task management tab
+        Create complete task management tab with enhanced layout
         
         Args:
             parent: Parent widget (usually notebook)
             callbacks: Dict of callback functions for actions
             
         Returns:
-            Tuple of (task_frame, task_tree, filter_vars)
+            Tuple of (task_frame, task_tree, search_var, filter_vars)
         """
         task_frame = ttk.Frame(parent)
         
@@ -90,18 +312,26 @@ class TaskTab:
         default_callbacks = {
             'add_task': lambda: None,
             'edit_task': lambda: None,
+            'view_task': lambda: None,
             'complete_task': lambda: None,
             'delete_task': lambda: None,
-            'filter_tasks': lambda e=None: None
+            'search_tasks': lambda e=None: None,
+            'filter_tasks': lambda: None,
+            'export_tasks': lambda: None,
+            'bulk_action': lambda action: None,
+            'refresh_data': lambda: None
         }
         if callbacks:
             default_callbacks.update(callbacks)
         
-        # Header with actions
+        # Header with enhanced actions
         actions = [
+            ("👁️ Xem", default_callbacks['view_task']),
             ("✏️ Cập nhật", default_callbacks['edit_task']),
             ("✅ Hoàn thành", default_callbacks['complete_task']),
-            ("🗑️ Xóa", default_callbacks.get('delete_task', lambda: None)),
+            ("🗑️ Xóa", default_callbacks['delete_task']),
+            ("📊 Xuất Excel", default_callbacks['export_tasks']),
+            ("🔄 Làm mới", default_callbacks['refresh_data']),
             ("➕ Tạo công việc", default_callbacks['add_task'])
         ]
         BaseHeader.create_header(task_frame, "Quản lý Công việc", actions)
@@ -110,21 +340,92 @@ class TaskTab:
         content_frame = tk.Frame(task_frame, bg=ModernTheme.GRAY_50)
         content_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Filter section
-        filter_vars = TaskFilter.create_task_filter(
-            content_frame, default_callbacks['filter_tasks'])
+        # Advanced filters
+        filter_vars = TaskFilters.create_filter_panel(content_frame, default_callbacks['filter_tasks'])
         
-        # Table container
+        # Search section - Thu nhỏ lại
+        search_frame = tk.Frame(content_frame, bg=ModernTheme.WHITE)
+        search_frame.pack(fill=tk.X, padx=20, pady=(0, 5))
+        
+        search_container = tk.Frame(search_frame, bg=ModernTheme.WHITE)
+        search_container.pack(fill=tk.X, padx=15, pady=5)
+        
+        # Tạo search box nhỏ gọn hơn
+        search_label = tk.Label(search_container, text="🔍 Tìm kiếm:", 
+                               font=("Arial", 10),
+                               bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700)
+        search_label.pack(side=tk.LEFT, padx=(0, 10))
+        
+        search_entry, search_var = TaskSearch.create_task_search(
+            search_container, default_callbacks['search_tasks'])
+        search_entry.configure(width=40)  # Giới hạn độ rộng
+        
+        # Bulk actions panel - Thu nhỏ lại
+        bulk_frame = tk.Frame(content_frame, bg=ModernTheme.WHITE)
+        bulk_frame.pack(fill=tk.X, padx=20, pady=(0, 5))
+        
+        bulk_container = tk.Frame(bulk_frame, bg=ModernTheme.WHITE)
+        bulk_container.pack(fill=tk.X, padx=15, pady=5)
+        
+        tk.Label(bulk_container, text="Thao tác hàng loạt:", 
+                font=("Arial", 9, "bold"),
+                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_700).pack(side=tk.LEFT)
+        
+        bulk_actions = [
+            ("Hoàn thành", lambda: default_callbacks['bulk_action']('complete')),
+            ("Tạm dừng", lambda: default_callbacks['bulk_action']('pause')),
+            ("Xóa được chọn", lambda: default_callbacks['bulk_action']('delete'))
+        ]
+        
+        for text, command in bulk_actions:
+            btn = tk.Button(bulk_container, text=text, 
+                           font=("Arial", 8),
+                           bg=ModernTheme.GRAY_200, fg=ModernTheme.GRAY_700,
+                           border=0, cursor="hand2", padx=10, pady=4,
+                           command=command)
+            btn.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Table container - Tăng kích thước
         table_container = tk.Frame(content_frame, bg=ModernTheme.WHITE)
         table_container.pack(fill=tk.BOTH, expand=True, 
-                            padx=ModernTheme.PADDING_MEDIUM, 
-                            pady=(0, ModernTheme.PADDING_MEDIUM))
+                            padx=20, pady=(0, 10))
         
-        # Create task table
-        task_tree, tree_container = TaskTable.create_task_table(table_container)
-        tree_container.pack(fill=tk.BOTH, expand=True)
+        # Create enhanced task table
+        task_tree, tree_container = TaskTable.create_enhanced_task_table(table_container)
+        tree_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        return task_frame, task_tree, filter_vars
+        # Context menu for table
+        context_menu = tk.Menu(task_tree, tearoff=0)
+        context_menu.add_command(label="👁️ Xem chi tiết", command=default_callbacks['view_task'])
+        context_menu.add_command(label="✏️ Chỉnh sửa", command=default_callbacks['edit_task'])
+        context_menu.add_separator()
+        context_menu.add_command(label="✅ Hoàn thành", command=default_callbacks['complete_task'])
+        context_menu.add_command(label="🗑️ Xóa", command=default_callbacks['delete_task'])
+        
+        def show_context_menu(event):
+            try:
+                context_menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                context_menu.grab_release()
+        
+        task_tree.bind("<Button-3>", show_context_menu)  # Right click
+        task_tree.bind("<Double-1>", lambda e: default_callbacks['view_task']())  # Double click
+        
+        # Status bar
+        status_frame = tk.Frame(task_frame, bg=ModernTheme.GRAY_100, height=30)
+        status_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        status_frame.pack_propagate(False)
+        
+        status_label = tk.Label(status_frame, text="Sẵn sàng", 
+                               font=("Arial", 9),
+                               bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_600,
+                               anchor=tk.W)
+        status_label.pack(side=tk.LEFT, padx=10, pady=5)
+        
+        # Store references for external access
+        task_frame.status_label = status_label
+        
+        return task_frame, task_tree, search_var, filter_vars
 
 
 class TaskForm:
@@ -827,6 +1128,10 @@ class TaskActions:
         for item in tree.get_children():
             tree.delete(item)
         
+        # Clear selected items if enhanced table has this property
+        if hasattr(tree, 'selected_items'):
+            tree.selected_items.clear()
+        
         # Mapping for user-friendly display
         priority_display = {
             'low': '🟢 Thấp',
@@ -846,10 +1151,10 @@ class TaskActions:
         # Add tasks with styling
         if not tasks:
             # Show empty state
-            tree.insert('', 'end', values=('', '📝 Không có công việc nào', '', '', '', '', ''))
+            tree.insert('', 'end', values=('☐', '', '📝 Không có công việc nào', '', '', '', '', ''))
             return
             
-        for task in tasks:
+        for i, task in enumerate(tasks):
             # Format priority and status for better display
             priority_str = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
             status_str = task.status.value if hasattr(task.status, 'value') else str(task.status)
@@ -862,7 +1167,34 @@ class TaskActions:
             due_date = task.due_date.strftime('%d/%m/%Y') if hasattr(task, 'due_date') and task.due_date else ''
             progress = f"{task.progress_percentage}%" if hasattr(task, 'progress_percentage') else "0%"
             
+            # Determine row tags based on status and priority - prioritize status like member styling
+            tags = []
+            tags.append('oddrow' if i % 2 else 'evenrow')
+            
+            # Status-based styling (primary) - like member table
+            if status_str in ["completed", "Hoàn thành"]:
+                tags.append('completed')
+            elif status_str in ["cancelled", "Hủy bỏ"]:
+                tags.append('cancelled')
+            elif status_str in ["in_progress", "Đang thực hiện"]:
+                tags.append('in_progress')
+            elif status_str in ["on_hold", "Tạm dừng"]:
+                tags.append('paused')
+            elif status_str in ["not_started", "Chưa bắt đầu"]:
+                tags.append('pending')
+            else:
+                # Check if overdue (only if not completed/cancelled)
+                if hasattr(task, 'due_date') and task.due_date:
+                    from datetime import datetime
+                    if task.due_date < datetime.now():
+                        tags.append('overdue')
+                    else:
+                        tags.append('normal')
+                else:
+                    tags.append('normal')
+            
             item_id = tree.insert('', 'end', values=(
+                '☐',  # Checkbox for enhanced mode
                 task.id,
                 task.title or "",
                 priority_display_str,
@@ -870,10 +1202,7 @@ class TaskActions:
                 task.assigned_to or '',
                 due_date,
                 progress
-            ))
-            
-            # Apply styling based on priority and status
-            TaskActions._apply_task_styling(tree, item_id, task)
+            ), tags=tags)
     
     @staticmethod
     def _apply_task_styling(tree: ttk.Treeview, item_id: str, task: Any):
@@ -920,7 +1249,7 @@ class TaskActions:
         selection = tree.selection()
         if selection:
             item = tree.item(selection[0])
-            return int(item['values'][0])  # ID is first column
+            return int(item['values'][1])  # ID is second column (index 1) due to checkbox in column 0
         return None
     
     @staticmethod
@@ -991,7 +1320,7 @@ class TaskActions:
         selection = tree.selection()
         if selection:
             item = tree.item(selection[0])
-            return int(item['values'][0])  # ID is first column
+            return int(item['values'][1])  # ID is second column (index 1) due to checkbox in column 0
         return None
     
     @staticmethod
@@ -1072,3 +1401,48 @@ class TaskActions:
                 stats['overdue'] += 1
         
         return stats
+    
+    @staticmethod
+    def export_tasks_to_excel(tasks: List[Any]) -> str:
+        """
+        Export tasks to Excel file
+        
+        Args:
+            tasks: List of task objects to export
+            
+        Returns:
+            str: Path to the exported file
+        """
+        return ExcelExportService.export_tasks_to_excel(tasks)
+    
+    @staticmethod
+    def export_visible_tasks_to_excel(tree: ttk.Treeview, all_tasks: List[Any]) -> str:
+        """
+        Export currently visible tasks in tree to Excel
+        
+        Args:
+            tree: Treeview widget
+            all_tasks: All available tasks
+            
+        Returns:
+            str: Path to the exported file
+        """
+        # Get visible task IDs from tree
+        visible_ids = []
+        for item in tree.get_children():
+            values = tree.item(item)['values']
+            if len(values) > 1 and values[1]:  # Check if ID exists
+                try:
+                    visible_ids.append(int(values[1]))
+                except (ValueError, IndexError):
+                    continue
+        
+        # Filter tasks to only include visible ones
+        visible_tasks = [task for task in all_tasks if getattr(task, 'id', None) in visible_ids]
+        
+        if not visible_tasks:
+            from tkinter import messagebox
+            messagebox.showwarning("Cảnh báo", "Không có công việc nào để xuất!")
+            return ""
+        
+        return ExcelExportService.export_tasks_to_excel(visible_tasks)

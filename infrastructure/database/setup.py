@@ -156,6 +156,142 @@ def insert_sample_members():
                 status=MemberStatus.INACTIVE,
                 join_date=datetime(2019, 5, 10),
                 notes="Tạm nghỉ việc để chăm sóc con nhỏ"
+            ),
+            # Thêm nhiều members mới cho demo
+            MemberModel(
+                member_code="DV005",
+                full_name="Nguyễn Thị Giang",
+                date_of_birth=datetime(1992, 9, 8),
+                gender="Nữ",
+                phone="0966555444",
+                email="giang.nguyen@company.com",
+                address="258 Đường Hai Bà Trưng, Quận 1, TP.HCM",
+                position="Chuyên viên Marketing",
+                department="Phòng Marketing",
+                member_type=MemberType.UNION_MEMBER,
+                status=MemberStatus.ACTIVE,
+                join_date=datetime(2023, 1, 5),
+                notes="Sáng tạo trong công việc, tích cực tham gia hoạt động"
+            ),
+            MemberModel(
+                member_code="DV006",
+                full_name="Đặng Văn Hưng",
+                date_of_birth=datetime(1987, 6, 30),
+                gender="Nam",
+                phone="0933222111",
+                email="hung.dang@company.com",
+                address="369 Đường Lý Tự Trọng, Quận 3, TP.HCM",
+                position="Trưởng phòng Kinh doanh",
+                department="Phòng Kinh doanh",
+                member_type=MemberType.UNION_MEMBER,
+                status=MemberStatus.ACTIVE,
+                join_date=datetime(2019, 11, 20),
+                notes="Có nhiều kinh nghiệm trong lĩnh vực kinh doanh"
+            ),
+            MemberModel(
+                member_code="HV002",
+                full_name="Phan Thị Lan",
+                date_of_birth=datetime(1975, 1, 18),
+                gender="Nữ",
+                phone="0922111333",
+                email="lan.phan@company.com",
+                address="741 Đường Nguyễn Thị Minh Khai, Quận 3, TP.HCM",
+                position="Giám đốc Tài chính",
+                department="Ban Giám đốc",
+                member_type=MemberType.ASSOCIATION_MEMBER,
+                status=MemberStatus.ACTIVE,
+                join_date=datetime(2017, 4, 12),
+                notes="Chuyên gia tài chính với hơn 15 năm kinh nghiệm"
+            ),
+            MemberModel(
+                member_code="DV007",
+                full_name="Vũ Văn Khang",
+                date_of_birth=datetime(1993, 10, 5),
+                gender="Nam",
+                phone="0944666888",
+                email="khang.vu@company.com",
+                address="852 Đường Sư Vạn Hạnh, Quận 10, TP.HCM",
+                position="Thiết kế đồ họa",
+                department="Phòng Marketing",
+                member_type=MemberType.UNION_MEMBER,
+                status=MemberStatus.ACTIVE,
+                join_date=datetime(2023, 6, 15),
+                notes="Tài năng trẻ trong lĩnh vực thiết kế"
+            ),
+            MemberModel(
+                member_code="DV008",
+                full_name="Lý Thị Mai",
+                date_of_birth=datetime(1991, 4, 25),
+                gender="Nữ",
+                phone="0955777999",
+                email="mai.ly@company.com",
+                address="159 Đường Cộng Hòa, Quận Tân Bình, TP.HCM",
+                position="Chuyên viên Pháp chế",
+                department="Phòng Pháp chế",
+                member_type=MemberType.UNION_MEMBER,
+                status=MemberStatus.SUSPENDED,
+                join_date=datetime(2020, 8, 30),
+                notes="Tạm đình chỉ do vi phạm nội quy công ty"
+            ),
+            MemberModel(
+                member_code="BCH002",
+                full_name="Tô Văn Nam",
+                date_of_birth=datetime(1980, 12, 3),
+                gender="Nam",
+                phone="0911444555",
+                email="nam.to@company.com",
+                address="753 Đường Nguyễn Văn Cừ, Quận 5, TP.HCM",
+                position="Phó Bí thư Đoàn",
+                department="Đoàn thanh niên",
+                member_type=MemberType.EXECUTIVE,
+                status=MemberStatus.ACTIVE,
+                join_date=datetime(2016, 2, 28),
+                notes="Hỗ trợ tích cực cho các hoạt động đoàn thể"
+            ),
+            MemberModel(
+                member_code="DV009",
+                full_name="Ngô Thị Oanh",
+                date_of_birth=datetime(1994, 8, 14),
+                gender="Nữ",
+                phone="0977123789",
+                email="oanh.ngo@company.com",
+                address="456 Đường Lê Văn Sỹ, Quận Phú Nhuận, TP.HCM",
+                position="Chuyên viên Quan hệ khách hàng",
+                department="Phòng Kinh doanh",
+                member_type=MemberType.UNION_MEMBER,
+                status=MemberStatus.ACTIVE,
+                join_date=datetime(2022, 12, 1),
+                notes="Có khả năng giao tiếp tốt với khách hàng"
+            ),
+            MemberModel(
+                member_code="DV010",
+                full_name="Bùi Văn Phúc",
+                date_of_birth=datetime(1989, 5, 22),
+                gender="Nam",
+                phone="0988456123",
+                email="phuc.bui@company.com",
+                address="987 Đường Hoàng Văn Thụ, Quận Tân Bình, TP.HCM",
+                position="Chuyên viên Kỹ thuật",
+                department="Phòng Kỹ thuật",
+                member_type=MemberType.UNION_MEMBER,
+                status=MemberStatus.INACTIVE,
+                join_date=datetime(2018, 7, 15),
+                notes="Nghỉ phép dài hạn do chấn thương"
+            ),
+            MemberModel(
+                member_code="HV003",
+                full_name="Đỗ Thị Quỳnh",
+                date_of_birth=datetime(1983, 11, 10),
+                gender="Nữ",
+                phone="0933789456",
+                email="quynh.do@company.com",
+                address="321 Đường Trần Hưng Đạo, Quận 1, TP.HCM",
+                position="Trưởng phòng Nhân sự",
+                department="Phòng Nhân sự",
+                member_type=MemberType.ASSOCIATION_MEMBER,
+                status=MemberStatus.ACTIVE,
+                join_date=datetime(2019, 3, 18),
+                notes="Có chuyên môn cao trong quản lý nhân sự"
             )
         ]
         
@@ -373,6 +509,185 @@ Trong bối cảnh dịch COVID-19 diễn biến phức tạp, tổ chức đã 
                 status=ReportStatus.DRAFT,
                 submitted_by=None,
                 submitted_at=None
+            ),
+            # Thêm nhiều reports mới cho demo bulk actions
+            ReportModel(
+                title="Báo cáo hoạt động tháng 2/2024",
+                report_type=ReportType.MONTHLY,
+                period="2024-02",
+                content="""
+### Báo cáo hoạt động tháng 2/2024
+
+**I. Hoạt động nổi bật:**
+1. Tổ chức Tết truyền thống cho đoàn viên
+2. Chương trình thăm hỏi Tết cho gia đình khó khăn  
+3. Hội nghị triển khai nhiệm vụ năm 2024
+
+**II. Kết quả đạt được:**
+- Tổ chức thành công 5 hoạt động lớn
+- Hỗ trợ 30 gia đình có hoàn cảnh khó khăn
+- Tỷ lệ tham gia hoạt động: 92%
+
+**III. Tài chính tháng 2:**
+- Thu: 18,000,000 VNĐ
+- Chi: 15,500,000 VNĐ  
+- Dư: 2,500,000 VNĐ
+                """,
+                attachments='[{"name": "hinh_anh_tet_2024.zip", "path": "/uploads/reports/hinh_anh_tet_2024.zip"}]',
+                status=ReportStatus.SUBMITTED,
+                submitted_by=member_ids[0],
+                submitted_at=datetime(2024, 3, 2, 8, 30)
+            ),
+            ReportModel(
+                title="Báo cáo hoạt động tháng 4/2024",
+                report_type=ReportType.MONTHLY,
+                period="2024-04",
+                content="""
+### Báo cáo hoạt động tháng 4/2024
+
+**I. Tháng thanh niên 2024:**
+1. Hội trại thanh niên "Tuổi trẻ năng động"
+2. Chương trình tình nguyện vệ sinh môi trường
+3. Thi tìm hiểu lịch sử Đoàn TNCS Hồ Chí Minh
+
+**II. Các chỉ số đạt được:**
+- Số đoàn viên tham gia: 140/150 (93.3%)
+- Số hoạt động tổ chức: 8 hoạt động
+- Điểm đánh giá hoạt động: 9.2/10
+
+**III. Những điểm nổi bật:**
+- Tăng cường tinh thần đoàn kết
+- Nâng cao ý thức trách nhiệm xã hội
+- Phát huy sáng kiến của thanh niên
+                """,
+                attachments='[{"name": "bang_diem_thi_tim_hieu.xlsx", "path": "/uploads/reports/bang_diem_thi_tim_hieu.xlsx"}]',
+                status=ReportStatus.SUBMITTED,
+                submitted_by=member_ids[1],
+                submitted_at=datetime(2024, 5, 3, 14, 20)
+            ),
+            ReportModel(
+                title="Báo cáo tình hình tài chính 6 tháng đầu năm 2024",
+                report_type=ReportType.SPECIAL,
+                period="2024-H1",
+                content="""
+### Báo cáo tài chính 6 tháng đầu năm 2024
+
+**I. Tổng quan:**
+6 tháng đầu năm 2024 tổ chức duy trì hoạt động ổn định về tài chính.
+
+**II. Thu nhập:**
+- Phí đoàn viên: 90,000,000 VNĐ
+- Tài trợ từ đơn vị: 50,000,000 VNĐ
+- Các khoản thu khác: 10,000,000 VNĐ
+- **Tổng thu: 150,000,000 VNĐ**
+
+**III. Chi phí:**
+- Hoạt động đoàn thể: 85,000,000 VNĐ
+- Hỗ trợ đoàn viên: 35,000,000 VNĐ
+- Chi phí quản lý: 15,000,000 VNĐ
+- **Tổng chi: 135,000,000 VNĐ**
+
+**IV. Kết quả:**
+- **Dư thu: 15,000,000 VNĐ**
+- Tình hình tài chính lành mạnh
+- Đảm bảo hoạt động 6 tháng cuối năm
+                """,
+                attachments='[{"name": "bang_can_doi_tai_chinh_h1_2024.xlsx", "path": "/uploads/reports/bang_can_doi_tai_chinh_h1_2024.xlsx"}]',
+                status=ReportStatus.DRAFT,
+                submitted_by=None,
+                submitted_at=None
+            ),
+            ReportModel(
+                title="Báo cáo hoạt động tháng 5/2024",
+                report_type=ReportType.MONTHLY,
+                period="2024-05",
+                content="""
+### Báo cáo hoạt động tháng 5/2024
+
+**I. Các hoạt động chính:**
+1. Tổ chức lễ kỷ niệm ngày thành lập Đoàn TNCS HCM
+2. Chương trình trao tặng học bổng cho con em đoàn viên
+3. Hội thi tài năng của đoàn viên trẻ
+
+**II. Kết quả đạt được:**
+- Trao 15 suất học bổng, tổng giá trị 45,000,000 VNĐ
+- 25 tiết mục tham gia hội thi tài năng
+- Tỷ lệ tham gia hoạt động: 88%
+
+**III. Đánh giá:**
+- Hoạt động đạt hiệu quả cao
+- Đoàn viên hưởng ứng tích cực
+- Tạo sân chơi bổ ích cho thanh niên
+                """,
+                attachments='[]',
+                status=ReportStatus.SUBMITTED,
+                submitted_by=member_ids[2],
+                submitted_at=datetime(2024, 6, 1, 16, 45)
+            ),
+            ReportModel(
+                title="Báo cáo quý II/2024",
+                report_type=ReportType.QUARTERLY,
+                period="Q2-2024",
+                content="""
+### Báo cáo quý II/2024
+
+**I. Tổng quan quý II:**
+Quý II đã triển khai nhiều hoạt động ý nghĩa, đặc biệt là Tháng Thanh niên.
+
+**II. Các chỉ tiêu hoàn thành:**
+- Số hoạt động: 18 hoạt động (vượt kế hoạch 20%)
+- Tỷ lệ tham gia: 89% (đạt chỉ tiêu 85%)
+- Số đoàn viên mới: 5 người
+
+**III. Hoạt động nổi bật:**
+1. Tháng Thanh niên với 8 hoạt động đa dạng
+2. Chương trình học bổng ý nghĩa
+3. Các hoạt động giao lưu văn hóa - thể thao
+
+**IV. Khó khăn:**
+- Thời tiết mưa nhiều ảnh hưởng một số hoạt động ngoài trời
+- Một số đoàn viên bận công việc chưa tham gia đầy đủ
+                """,
+                attachments='[{"name": "bao_cao_quy_2_2024.pdf", "path": "/uploads/reports/bao_cao_quy_2_2024.pdf"}]',
+                status=ReportStatus.DRAFT,
+                submitted_by=None,
+                submitted_at=None
+            ),
+            ReportModel(
+                title="Báo cáo đặc biệt: Hoạt động hè 2024",
+                report_type=ReportType.SPECIAL,
+                period="2024-Summer",
+                content="""
+### Báo cáo hoạt động hè 2024
+
+**I. Tổng quan:**
+Mùa hè 2024 với nhiều hoạt động bổ ích cho đoàn viên và thanh thiếu nhi.
+
+**II. Các chương trình đã triển khai:**
+1. **Trại hè thanh niên 2024:**
+   - 60 đoàn viên tham gia
+   - Thời gian: 3 ngày 2 đêm tại Đà Lạt
+   - Ngân sách: 120,000,000 VNĐ
+
+2. **Lớp học hè cho con em đoàn viên:**
+   - 40 em tham gia
+   - Các môn: Toán, Văn, Tiếng Anh, Tin học
+   - Miễn phí 100%
+
+3. **Chương trình tình nguyện mùa hè:**
+   - Dạy học cho trẻ em vùng khó khăn
+   - 20 tình nguyện viên tham gia
+   - Thời gian: 2 tuần
+
+**III. Kết quả đạt được:**
+- Tăng cường kỹ năng sống cho đoàn viên
+- Nâng cao tinh thần tình nguyện
+- Hỗ trợ giáo dục cho con em đoàn viên
+                """,
+                attachments='[{"name": "album_anh_he_2024.zip", "path": "/uploads/reports/album_anh_he_2024.zip"}]',
+                status=ReportStatus.SUBMITTED,
+                submitted_by=member_ids[0],
+                submitted_at=datetime(2024, 8, 15, 10, 30)
             )
         ]
         
@@ -698,6 +1013,268 @@ Lập báo cáo tài chính chi tiết cho quý I/2024:
                 actual_hours=18.0,
                 progress_percentage=100,
                 notes="Báo cáo đã hoàn thành và được Ban chấp hành phê duyệt. Tình hình tài chính ổn định."
+            ),
+            # Thêm nhiều tasks mới cho demo
+            TaskModel(
+                title="Thiết kế poster tuyên truyền",
+                description="""
+Thiết kế các poster tuyên truyền cho các hoạt động sắp tới:
+
+**Yêu cầu thiết kế:**
+1. Poster cho Ngày hội thể thao
+2. Poster cho chương trình từ thiện
+3. Poster tuyển đoàn viên mới
+4. Banner cho website
+
+**Thông số kỹ thuật:**
+- Kích thước: A3 cho poster, 1200x400px cho banner
+- Định dạng: AI, PSD, PNG, JPG
+- Màu sắc: Theo bộ nhận diện tổ chức
+- Font chữ: Roboto, Arial
+
+**Deadline:**
+- Draft 1: 3 ngày
+- Final: 1 tuần
+                """,
+                priority=TaskPriority.MEDIUM,
+                status=TaskStatus.IN_PROGRESS,
+                assigned_to=member_ids[1],
+                assigned_by=member_ids[0],
+                start_date=now - timedelta(days=2),
+                due_date=now + timedelta(days=5),
+                estimated_hours=16.0,
+                actual_hours=8.0,
+                progress_percentage=50,
+                notes="Đã hoàn thành 2/4 poster, đang làm poster tuyển đoàn viên mới"
+            ),
+            TaskModel(
+                title="Chuẩn bị văn phòng phẩm cho năm học mới",
+                description="""
+Mua sắm và chuẩn bị văn phòng phẩm cho hoạt động năm học 2024-2025:
+
+**Danh sách cần mua:**
+1. Giấy A4: 20 ream
+2. Bút bi: 100 cái
+3. Bút chì: 50 cái  
+4. Tẩy: 30 cái
+5. Kẹp giấy: 10 hộp
+6. Ghim đóng: 5 hộp
+7. Băng keo: 20 cuộn
+8. Thư mục: 50 cái
+
+**Ngân sách:** 5,000,000 VNĐ
+**Nhà cung cấp:** Công ty Thiên Long, Bình Minh
+**Giao hàng:** Trước 15/9/2024
+                """,
+                priority=TaskPriority.LOW,
+                status=TaskStatus.NOT_STARTED,
+                assigned_to=member_ids[2],
+                assigned_by=member_ids[3],
+                start_date=now + timedelta(days=1),
+                due_date=now + timedelta(days=10),
+                estimated_hours=8.0,
+                actual_hours=0.0,
+                progress_percentage=0,
+                notes="Chờ phê duyệt ngân sách từ phòng tài chính"
+            ),
+            TaskModel(
+                title="Tổ chức khóa đào tạo kỹ năng mềm",
+                description="""
+Tổ chức khóa đào tạo kỹ năng mềm cho đoàn viên:
+
+**Nội dung đào tạo:**
+1. Kỹ năng giao tiếp hiệu quả
+2. Kỹ năng thuyết trình
+3. Kỹ năng làm việc nhóm
+4. Quản lý thời gian
+5. Tư duy sáng tạo
+
+**Logistics:**
+- Thời gian: 2 ngày (thứ 7-chủ nhật)
+- Địa điểm: Hội trường công ty
+- Số lượng: 50 học viên
+- Giảng viên: Mời từ bên ngoài
+
+**Chuẩn bị:**
+- Liên hệ giảng viên
+- Đặt suất ăn
+- In tài liệu
+- Chuẩn bị thiết bị
+                """,
+                priority=TaskPriority.HIGH,
+                status=TaskStatus.NOT_STARTED,
+                assigned_to=member_ids[0],
+                assigned_by=member_ids[3],
+                start_date=now + timedelta(days=3),
+                due_date=now + timedelta(days=21),
+                estimated_hours=40.0,
+                actual_hours=0.0,
+                progress_percentage=0,
+                notes="Cần xác định ngân sách và phê duyệt kế hoạch trước khi triển khai"
+            ),
+            TaskModel(
+                title="Sửa chữa âm thanh phòng hội thảo",
+                description="""
+Sửa chữa hệ thống âm thanh phòng hội thảo bị hỏng:
+
+**Vấn đề hiện tại:**
+- Micro không bắt âm
+- Loa bị rè, kêu to
+- Mixer có tiếng ồn
+- Dây cáp bị đứt một số đoạn
+
+**Cần làm:**
+1. Kiểm tra toàn bộ hệ thống
+2. Thay thế linh kiện hỏng
+3. Căng lại dây cáp
+4. Test thử toàn hệ thống
+5. Bảo dưỡng định kỳ
+
+**Dự kiến chi phí:** 3,000,000 VNĐ
+**Thời gian sửa:** 2 ngày
+                """,
+                priority=TaskPriority.URGENT,
+                status=TaskStatus.IN_PROGRESS,
+                assigned_to=member_ids[3],
+                assigned_by=member_ids[0],
+                start_date=yesterday,
+                due_date=tomorrow,
+                estimated_hours=16.0,
+                actual_hours=10.0,
+                progress_percentage=70,
+                notes="Đã xác định được nguyên nhân, đang chờ linh kiện thay thế từ nhà cung cấp"
+            ),
+            TaskModel(
+                title="Cập nhật hồ sơ thành viên cho năm 2024",
+                description="""
+Cập nhật và rà soát hồ sơ thành viên theo quy định mới:
+
+**Công việc cần làm:**
+1. Thu thập thông tin cập nhật từ thành viên
+2. Scan và lưu trữ giấy tờ mới
+3. Cập nhật vào hệ thống quản lý
+4. In thẻ thành viên mới
+5. Lưu trữ hồ sơ theo quy định
+
+**Giấy tờ cần cập nhật:**
+- CMND/CCCD mới
+- Bằng cấp mới (nếu có)
+- Thông tin liên hệ
+- Nơi làm việc hiện tại
+
+**Số lượng:** 150 hồ sơ
+**Thời hạn:** 1 tháng
+                """,
+                priority=TaskPriority.MEDIUM,
+                status=TaskStatus.ON_HOLD,
+                assigned_to=member_ids[1],
+                assigned_by=member_ids[2],
+                start_date=last_week,
+                due_date=next_month,
+                estimated_hours=60.0,
+                actual_hours=15.0,
+                progress_percentage=25,
+                notes="Tạm dừng do đang chờ hướng dẫn mới từ cấp trên về mẫu hồ sơ"
+            ),
+            TaskModel(
+                title="Lên kế hoạch hoạt động cuối năm 2024",
+                description="""
+Xây dựng kế hoạch tổng thể cho các hoạt động cuối năm:
+
+**Các hoạt động chính:**
+1. **Tháng 10:** Kỷ niệm ngày Phụ nữ Việt Nam
+2. **Tháng 11:** Hội nghị tổng kết năm
+3. **Tháng 12:** 
+   - Gala dinner cuối năm
+   - Trao giải thưởng xuất sắc
+   - Tiệc tất niên
+
+**Cần chuẩn bị:**
+- Ngân sách chi tiết
+- Địa điểm tổ chức
+- Chương trình nghệ thuật
+- Danh sách khách mời
+- Quà tặng và phần thưởng
+
+**Ngân sách dự kiến:** 200,000,000 VNĐ
+**Timeline:** Bắt đầu chuẩn bị từ tháng 9
+                """,
+                priority=TaskPriority.HIGH,
+                status=TaskStatus.NOT_STARTED,
+                assigned_to=member_ids[0],
+                assigned_by=member_ids[3],
+                start_date=next_week,
+                due_date=datetime(2024, 12, 31),
+                estimated_hours=80.0,
+                actual_hours=0.0,
+                progress_percentage=0,
+                notes="Cần họp Ban chấp hành để thống nhất phương án trước khi triển khai"
+            ),
+            TaskModel(
+                title="Backup và bảo mật dữ liệu hệ thống",
+                description="""
+Thực hiện backup và tăng cường bảo mật cho hệ thống IT:
+
+**Công việc backup:**
+1. Backup database hàng tuần
+2. Backup files quan trọng
+3. Test phục hồi dữ liệu
+4. Lưu trữ backup ngoài site
+
+**Tăng cường bảo mật:**
+1. Cập nhật antivirus
+2. Cập nhật Windows Update
+3. Thay đổi password định kỳ
+4. Kiểm tra firewall
+5. Quét malware toàn hệ thống
+
+**Lịch thực hiện:**
+- Backup: Mỗi chủ nhật
+- Bảo mật: Mỗi tháng
+- Kiểm tra: Mỗi quý
+                """,
+                priority=TaskPriority.HIGH,
+                status=TaskStatus.IN_PROGRESS,
+                assigned_to=member_ids[2],
+                assigned_by=member_ids[0],
+                start_date=now - timedelta(days=5),
+                due_date=now + timedelta(days=2),
+                estimated_hours=12.0,
+                actual_hours=8.0,
+                progress_percentage=65,
+                notes="Đã hoàn thành backup, đang thực hiện cập nhật bảo mật"
+            ),
+            TaskModel(
+                title="Khảo sát ý kiến đoàn viên về hoạt động 2024",
+                description="""
+Tiến hành khảo sát ý kiến đoàn viên về chất lượng hoạt động năm 2024:
+
+**Nội dung khảo sát:**
+1. Đánh giá các hoạt động đã tham gia
+2. Ý kiến về chương trình đào tạo
+3. Góp ý về hoạt động tài chính
+4. Đề xuất hoạt động năm 2025
+5. Đánh giá Ban chấp hành
+
+**Phương pháp:**
+- Khảo sát online qua Google Form
+- Phỏng vấn trực tiếp một số đoàn viên
+- Họp nhóm tập trung (Focus Group)
+
+**Mục tiêu:** 90% đoàn viên tham gia khảo sát
+**Thời gian:** 2 tuần
+**Sản phẩm:** Báo cáo khảo sát 50 trang
+                """,
+                priority=TaskPriority.MEDIUM,
+                status=TaskStatus.CANCELLED,
+                assigned_to=member_ids[1],
+                assigned_by=member_ids[3],
+                start_date=datetime(2024, 6, 1),
+                due_date=datetime(2024, 6, 15),
+                estimated_hours=24.0,
+                actual_hours=4.0,
+                progress_percentage=15,
+                notes="Hủy do trùng thời gian với khảo sát của cấp trên, sẽ tổ chức lại vào tháng 10"
             )
         ]
         

@@ -10,6 +10,7 @@ from typing import Callable, List, Tuple, Optional, Dict, Any
 import datetime
 from presentation.gui.theme import ModernTheme
 from presentation.gui.base_components import BaseHeader, BaseTable, BaseSearch
+from application.services.excel_service import ExcelExportService
 
 
 class MemberTable:
@@ -1500,6 +1501,60 @@ class MemberActions:
         
         detail_window.after(100, update_scroll_region)
         close_btn.pack(pady=(20, 0))
+    
+    @staticmethod
+    def export_members_to_excel(members: List[Any]) -> str:
+        """
+        Export members to Excel file
+        
+        Args:
+            members: List of member objects to export
+            
+        Returns:
+            str: Path to the exported file
+        """
+        return ExcelExportService.export_members_to_excel(members)
+    
+    @staticmethod
+    def export_visible_members_to_excel(tree: ttk.Treeview, all_members: List[Any], enhanced_mode: bool = False) -> str:
+        """
+        Export currently visible members in tree to Excel
+        
+        Args:
+            tree: Treeview widget
+            all_members: All available members
+            enhanced_mode: Whether using enhanced table format
+            
+        Returns:
+            str: Path to the exported file
+        """
+        # Get visible member IDs from tree
+        visible_ids = []
+        for item in tree.get_children():
+            values = tree.item(item)['values']
+            if enhanced_mode:
+                # In enhanced mode, ID is in column 1 (after checkbox)
+                if len(values) > 1 and values[1]:
+                    try:
+                        visible_ids.append(int(values[1]))
+                    except (ValueError, IndexError):
+                        continue
+            else:
+                # In basic mode, ID is in column 0
+                if len(values) > 0 and values[0]:
+                    try:
+                        visible_ids.append(int(values[0]))
+                    except (ValueError, IndexError):
+                        continue
+        
+        # Filter members to only include visible ones
+        visible_members = [member for member in all_members if getattr(member, 'id', None) in visible_ids]
+        
+        if not visible_members:
+            messagebox.showwarning("Cảnh báo", "Không có thành viên nào để xuất!")
+            return ""
+        
+        return ExcelExportService.export_members_to_excel(visible_members)
 
 
 class MemberFilters:
@@ -1600,65 +1655,6 @@ class MemberFilters:
         clear_btn.pack(side=tk.LEFT, padx=(3, 0))
         
         return filters
-
-
-class MemberExport:
-    """Member data export functionality"""
-    
-    @staticmethod
-    def export_to_csv(parent, members: List[Any], filename: str = None):
-        """
-        Export member data to CSV file
-        
-        Args:
-            parent: Parent widget for file dialog
-            members: List of member objects
-            filename: Optional filename
-        """
-        try:
-            import csv
-            
-            if not filename:
-                filename = filedialog.asksaveasfilename(
-                    parent=parent,
-                    title="Xuất danh sách thành viên",
-                    defaultextension=".csv",
-                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-                )
-            
-            if not filename:
-                return
-            
-            with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
-                fieldnames = [
-                    'Mã thành viên', 'Họ tên', 'Ngày sinh', 'Giới tính',
-                    'Số điện thoại', 'Email', 'Địa chỉ', 'Chức vụ', 
-                    'Phòng ban', 'Loại thành viên', 'Trạng thái', 'Ngày tham gia'
-                ]
-                
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writeheader()
-                
-                for member in members:
-                    writer.writerow({
-                        'Mã thành viên': member.member_code,
-                        'Họ tên': member.full_name,
-                        'Ngày sinh': member.date_of_birth.strftime('%d/%m/%Y') if member.date_of_birth else '',
-                        'Giới tính': member.gender,
-                        'Số điện thoại': member.phone,
-                        'Email': member.email,
-                        'Địa chỉ': member.address,
-                        'Chức vụ': member.position,
-                        'Phòng ban': member.department,
-                        'Loại thành viên': member.get_member_type_display() if hasattr(member, 'get_member_type_display') else member.member_type,
-                        'Trạng thái': member.get_status_display() if hasattr(member, 'get_status_display') else member.status,
-                        'Ngày tham gia': member.join_date.strftime('%d/%m/%Y') if member.join_date else ''
-                    })
-            
-            messagebox.showinfo("Thành công", f"Đã xuất {len(members)} thành viên ra file: {filename}")
-            
-        except Exception as e:
-            messagebox.showerror("Lỗi", f"Không thể xuất file: {str(e)}")
 
 
 class MemberStats:
