@@ -26,6 +26,7 @@ from presentation.gui.dashboard_components import DashboardTab
 from presentation.gui.member_components import MemberTab, MemberActions, MemberForm
 from presentation.gui.report_components import ReportTab, ReportActions, ReportForm
 from presentation.gui.task_components import TaskTab, TaskActions, TaskForm
+from presentation.gui.statistics_components import show_statistics_window
 
 # Import controllers
 from presentation.controllers.report_controller import ReportController
@@ -404,8 +405,20 @@ class MainApplication:
     
     def _view_statistics(self):
         """Quick action: Xem thống kê"""
-        self._refresh_dashboard()
-        self.update_status("Đã làm mới thống kê", temp=True)
+        try:
+            # Mở cửa sổ thống kê chi tiết
+            show_statistics_window(
+                self.root, 
+                member_use_case=self.member_use_case,
+                report_use_case=self.report_use_case, 
+                task_use_case=self.task_use_case
+            )
+            self.update_status("Đã mở cửa sổ thống kê chi tiết", temp=True)
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể mở cửa sổ thống kê: {e}")
+            # Fallback to refresh dashboard
+            self._refresh_dashboard()
+            self.update_status("Đã làm mới thống kê dashboard", temp=True)
     
     # Member management methods
     def _add_member(self):
