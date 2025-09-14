@@ -30,6 +30,7 @@ class Report:
     content: str = ""
     attachments: str = ""  # JSON string chứa danh sách file đính kèm
     status: ReportStatus = ReportStatus.DRAFT
+    created_by: Optional[int] = None  # ID của người tạo báo cáo
     submitted_by: Optional[int] = None  # ID của người nộp
     submitted_at: Optional[datetime] = None
     approved_by: Optional[int] = None  # ID của người duyệt
@@ -67,4 +68,6 @@ class Report:
 
     def is_editable(self) -> bool:
         """Kiểm tra báo cáo có thể chỉnh sửa không"""
-        return self.status in [ReportStatus.DRAFT, ReportStatus.REJECTED]
+        # Cho phép chỉnh sửa báo cáo ở trạng thái DRAFT, REJECTED, và SUBMITTED
+        # (trong thực tế có thể muốn hạn chế hơn)
+        return self.status in [ReportStatus.DRAFT, ReportStatus.REJECTED, ReportStatus.SUBMITTED]
