@@ -269,7 +269,7 @@ class TaskFilters:
         
         status_var = tk.StringVar()
         status_combo = ttk.Combobox(status_frame, textvariable=status_var,
-                                   values=["Tất cả", "Chờ thực hiện", "Đang thực hiện", "Hoàn thành", "Tạm dừng"],
+                                   values=["Tất cả", "Chờ thực hiện", "Đang thực hiện", "Hoàn thành", "Tạm dừng", "Hủy bỏ", "Quá hạn"],
                                    state="readonly", width=12, font=("Arial", 8))
         status_combo.pack()
         status_combo.set("Tất cả")
@@ -1063,10 +1063,12 @@ class TaskForm:
                         result[field_name] = priority_reverse_mapping.get(value, value)
                     elif field_name == "status":
                         status_reverse_mapping = {
-                            "⏸️ Chờ thực hiện": "Chờ thực hiện",
+                            "⏸️ Chưa bắt đầu": "Chờ thực hiện",
                             "⚡ Đang thực hiện": "Đang thực hiện",
                             "✅ Hoàn thành": "Hoàn thành",
-                            "⏸️ Tạm dừng": "Tạm dừng"
+                            "⏸️ Tạm dừng": "Tạm dừng",
+                            "❌ Hủy bỏ": "Hủy bỏ",
+                            "🚨 Quá hạn": "Quá hạn"
                         }
                         result[field_name] = status_reverse_mapping.get(value, value)
                     else:
@@ -1189,7 +1191,8 @@ class TaskActions:
             'in_progress': '⚡ Đang thực hiện',
             'completed': '✅ Hoàn thành',
             'cancelled': '❌ Hủy bỏ',
-            'on_hold': '⏸️ Tạm dừng'
+            'on_hold': '⏸️ Tạm dừng',
+            'overdue': '🚨 Quá hạn'
         }
         
         # Add tasks with styling
@@ -1245,6 +1248,8 @@ class TaskActions:
                 tags.append('paused')
             elif status_str in ["not_started", "Chưa bắt đầu"]:
                 tags.append('pending')
+            elif status_str in ["overdue", "Quá hạn"]:
+                tags.append('overdue')
             else:
                 # Check if overdue (only if not completed/cancelled)
                 if hasattr(task, 'due_date') and task.due_date:
@@ -1349,7 +1354,9 @@ class TaskActions:
                 'Chờ thực hiện': 'not_started',
                 'Đang thực hiện': 'in_progress',
                 'Hoàn thành': 'completed',
-                'Tạm dừng': 'on_hold'
+                'Tạm dừng': 'on_hold',
+                'Hủy bỏ': 'cancelled',
+                'Quá hạn': 'overdue'
             }
         
         # Get database value
@@ -1448,20 +1455,21 @@ class TaskActions:
             priority = task.priority.value if hasattr(task.priority, 'value') else task.priority
             
             # Status counts
-            if status == "Hoàn thành":
+            if status in ["completed", "Hoàn thành"]:
                 stats['completed'] += 1
-            elif status == "Đang thực hiện":
+            elif status in ["in_progress", "Đang thực hiện"]:
                 stats['in_progress'] += 1
-            elif status == "Chờ thực hiện":
+            elif status in ["not_started", "Chờ thực hiện"]:
                 stats['pending'] += 1
             
             # Priority counts
-            if priority in ["Cao", "Khẩn cấp"]:
+            if priority in ["high", "urgent", "Cao", "Khẩn cấp"]:
                 stats['high_priority'] += 1
             
-            # Overdue check
-            if (hasattr(task, 'due_date') and task.due_date and 
-                task.due_date < now and status != "Hoàn thành"):
+            # Overdue check - check both explicit overdue status and date-based overdue
+            if (status in ["overdue", "Quá hạn"] or 
+                (hasattr(task, 'due_date') and task.due_date and 
+                task.due_date < now and status not in ["completed", "Hoàn thành"])):
                 stats['overdue'] += 1
         
         return stats

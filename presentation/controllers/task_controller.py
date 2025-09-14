@@ -153,7 +153,9 @@ class TaskController(BaseController):
             TaskStatus.NOT_STARTED: "Chờ thực hiện",
             TaskStatus.IN_PROGRESS: "Đang thực hiện",
             TaskStatus.COMPLETED: "Hoàn thành",
-            TaskStatus.ON_HOLD: "Tạm dừng"
+            TaskStatus.ON_HOLD: "Tạm dừng",
+            TaskStatus.CANCELLED: "Hủy bỏ",
+            TaskStatus.OVERDUE: "Quá hạn"
         }
         
         return {
@@ -195,7 +197,9 @@ class TaskController(BaseController):
             'Chờ thực hiện': TaskStatus.NOT_STARTED,
             'Đang thực hiện': TaskStatus.IN_PROGRESS,
             'Hoàn thành': TaskStatus.COMPLETED,
-            'Tạm dừng': TaskStatus.ON_HOLD
+            'Tạm dừng': TaskStatus.ON_HOLD,
+            'Hủy bỏ': TaskStatus.CANCELLED,
+            'Quá hạn': TaskStatus.OVERDUE
         }
         processed_data['status'] = status_mapping.get(status_str, TaskStatus.NOT_STARTED)
         

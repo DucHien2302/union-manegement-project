@@ -1064,7 +1064,7 @@ class MainApplication:
         
         self.task_status_var = tk.StringVar(value="Tất cả")
         status_combo = ttk.Combobox(filter_frame, textvariable=self.task_status_var,
-                                   values=["Tất cả", "Chờ thực hiện", "Đang thực hiện", "Hoàn thành", "Tạm dừng"],
+                                   values=["Tất cả", "Chờ thực hiện", "Đang thực hiện", "Hoàn thành", "Tạm dừng", "Hủy bỏ", "Quá hạn"],
                                    state="readonly", width=15)
         status_combo.pack(side=tk.LEFT, padx=(8, 0))
         status_combo.bind('<<ComboboxSelected>>', self._filter_tasks)

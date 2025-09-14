@@ -612,7 +612,9 @@ class MainApplication:
                         'Chờ thực hiện': 'not_started',
                         'Đang thực hiện': 'in_progress',
                         'Hoàn thành': 'completed',
-                        'Tạm dừng': 'on_hold'
+                        'Tạm dừng': 'on_hold',
+                        'Hủy bỏ': 'cancelled',
+                        'Quá hạn': 'overdue'
                     }
                     db_status = status_mapping.get(status_filter, status_filter.lower())
                     task_status = task.status.value if hasattr(task.status, 'value') else str(task.status)
