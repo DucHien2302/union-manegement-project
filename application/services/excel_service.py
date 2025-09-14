@@ -203,7 +203,15 @@ class ExcelExportService:
                 
                 # Format dates
                 created_date = ""
-                if hasattr(report, 'created_date') and report.created_date:
+                if hasattr(report, 'created_at') and report.created_at:
+                    try:
+                        if isinstance(report.created_at, datetime):
+                            created_date = report.created_at.strftime('%d/%m/%Y')
+                        else:
+                            created_date = str(report.created_at)
+                    except:
+                        created_date = ""
+                elif hasattr(report, 'created_date') and report.created_date:
                     try:
                         if isinstance(report.created_date, datetime):
                             created_date = report.created_date.strftime('%d/%m/%Y')
@@ -211,6 +219,16 @@ class ExcelExportService:
                             created_date = str(report.created_date)
                     except:
                         created_date = ""
+                
+                updated_date = ""
+                if hasattr(report, 'updated_at') and report.updated_at:
+                    try:
+                        if isinstance(report.updated_at, datetime):
+                            updated_date = report.updated_at.strftime('%d/%m/%Y')
+                        else:
+                            updated_date = str(report.updated_at)
+                    except:
+                        updated_date = ""
                 
                 # Map to Vietnamese display
                 type_mapping = {
@@ -228,14 +246,24 @@ class ExcelExportService:
                     'in_review': 'Đang xem xét'
                 }
                 
+                # Get creator name - fallback to formatted ID if name not available
+                creator_info = ""
+                if hasattr(report, 'created_by_name') and report.created_by_name:
+                    creator_info = report.created_by_name
+                elif hasattr(report, 'created_by') and report.created_by:
+                    creator_info = f"User {report.created_by}"
+                else:
+                    creator_info = "User None"
+                
                 data.append({
                     'ID': getattr(report, 'id', ''),
                     'Tiêu đề': getattr(report, 'title', ''),
                     'Loại báo cáo': type_mapping.get(report_type_str, report_type_str),
                     'Kỳ báo cáo': getattr(report, 'period', ''),
                     'Trạng thái': status_mapping.get(status_str, status_str),
-                    'Người tạo': getattr(report, 'created_by', ''),
+                    'Người tạo': creator_info,
                     'Ngày tạo': created_date,
+                    'Ngày cập nhật': updated_date,
                     'Mô tả': getattr(report, 'description', '')
                 })
             
@@ -264,7 +292,7 @@ class ExcelExportService:
             ws.title = "Báo cáo"
             
             # Add title
-            ws.merge_cells('A1:H1')
+            ws.merge_cells('A1:I1')
             title_cell = ws['A1']
             title_cell.value = f"DANH SÁCH BÁO CÁO - {datetime.now().strftime('%d/%m/%Y')}"
             title_cell.font = Font(name='Arial', size=16, bold=True, color='FFFFFF')
@@ -289,9 +317,20 @@ class ExcelExportService:
                     # Alternate row colors
                     if row_num % 2 == 0:
                         cell.fill = PatternFill(start_color='F2F2F2', end_color='F2F2F2', fill_type='solid')
+                    
+                    # Color coding for status column (column 5)
+                    if col_num == 5:  # Status column
+                        if 'Đã duyệt' in str(value):
+                            cell.font = Font(name='Arial', size=10, color='2E7D32')
+                        elif 'Nháp' in str(value):
+                            cell.font = Font(name='Arial', size=10, color='FF9800')
+                        elif 'Đã nộp' in str(value):
+                            cell.font = Font(name='Arial', size=10, color='2196F3')
+                        elif 'Từ chối' in str(value):
+                            cell.font = Font(name='Arial', size=10, color='D32F2F')
             
             # Set column widths
-            column_widths = [8, 40, 20, 15, 15, 20, 15, 50]
+            column_widths = [8, 40, 20, 15, 15, 20, 15, 15, 50]
             for col_num, width in enumerate(column_widths, 1):
                 ws.column_dimensions[chr(64 + col_num)].width = width
             
