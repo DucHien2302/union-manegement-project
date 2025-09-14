@@ -66,9 +66,9 @@ class ReportManagementUseCase:
         if not existing_report:
             raise ValueError(f"Không tìm thấy báo cáo với ID {report_id}")
         
-        # Kiểm tra báo cáo có thể chỉnh sửa không
-        if not existing_report.is_editable():
-            raise ValueError("Báo cáo này không thể chỉnh sửa")
+        # Kiểm tra báo cáo có thể chỉnh sửa không - chỉ cấm chỉnh sửa báo cáo đã duyệt
+        if existing_report.status == ReportStatus.APPROVED:
+            raise ValueError("Không thể chỉnh sửa báo cáo đã được duyệt")
         
         # Cập nhật các thuộc tính
         for key, value in update_data.items():

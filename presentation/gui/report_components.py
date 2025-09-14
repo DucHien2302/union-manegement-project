@@ -48,70 +48,100 @@ class ReportTable:
         Returns:
             Tuple of (treeview, container_frame)
         """
-        columns = ('☐', 'ID', 'Tiêu đề', 'Loại', 'Kỳ', 'Trạng thái', 'Ngày tạo')
-        column_widths = {
-            '☐': 40, 'ID': 60, 'Tiêu đề': 300, 'Loại': 140, 'Kỳ': 120, 
-            'Trạng thái': 150, 'Ngày tạo': 120
-        }
+        # Container frame
+        container = tk.Frame(parent, bg=ModernTheme.WHITE)
         
-        # Configure table style
+        # Table frame with header
+        table_frame = tk.Frame(container, bg=ModernTheme.WHITE)
+        table_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Define columns with better structure
+        columns = ('Select', 'ID', 'Tiêu đề', 'Loại', 'Kỳ', 'Người tạo', 
+                  'Ngày tạo', 'Ngày cập nhật', 'Trạng thái')
+        
+        # Create treeview với chiều cao lớn hơn và font size lớn hơn
         style = ttk.Style()
         style.configure("Treeview", font=("Arial", 11), rowheight=30)
         style.configure("Treeview.Heading", font=("Arial", 11, "bold"))
         
-        tree, container = BaseTable.create_modern_table(parent, columns, column_widths)
-        tree.configure(height=20)  # Match member enhanced table height
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
         
-        # Enhanced checkbox functionality
+        # Configure column widths và headings - Tăng kích thước
+        column_configs = {
+            'Select': (50, '☐', tk.CENTER),
+            'ID': (60, 'ID', tk.CENTER),
+            'Tiêu đề': (250, 'Tiêu đề báo cáo', tk.W),
+            'Loại': (130, 'Loại báo cáo', tk.W),
+            'Kỳ': (120, 'Kỳ báo cáo', tk.CENTER),
+            'Người tạo': (130, 'Người tạo', tk.W),
+            'Ngày tạo': (110, 'Ngày tạo', tk.CENTER),
+            'Ngày cập nhật': (120, 'Ngày cập nhật', tk.CENTER),
+            'Trạng thái': (120, 'Trạng thái', tk.CENTER)
+        }
+        
+        for col, (width, heading, anchor) in column_configs.items():
+            tree.column(col, width=width, minwidth=width, anchor=anchor)
+            tree.heading(col, text=heading, anchor=anchor)
+        
+        # Configure row styles
+        tree.tag_configure('oddrow', background='#f8f9fa')
+        tree.tag_configure('evenrow', background='white')
+        tree.tag_configure('selected', background='#e3f2fd')
+        tree.tag_configure('approved', foreground='#2e7d32')
+        tree.tag_configure('submitted', foreground='#1565c0')
+        tree.tag_configure('draft', foreground='#f57c00')
+        tree.tag_configure('rejected', foreground='#d32f2f')
+        tree.tag_configure('in_review', foreground='#6a1b9a')
+        
+        # Scrollbars
+        v_scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=tree.yview)
+        h_scrollbar = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL, command=tree.xview)
+        
+        tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        # Pack scrollbars and tree
+        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add selection tracking
         selected_items = set()
         
-        def on_item_click(event):
-            """Handle checkbox toggle on item click"""
-            item = tree.identify('item', event.x, event.y)
-            column = tree.identify('column', event.x, event.y)
-            
-            if item and column == '#1':  # Checkbox column
+        def toggle_selection(event):
+            """Toggle item selection"""
+            item = tree.selection()[0] if tree.selection() else None
+            if item:
                 if item in selected_items:
                     selected_items.remove(item)
-                    tree.set(item, '☐', '☐')
+                    tree.set(item, 'Select', '☐')
+                    tree.item(item, tags=('oddrow',) if tree.index(item) % 2 else ('evenrow',))
                 else:
                     selected_items.add(item)
-                    tree.set(item, '☐', '☑')
-                return "break"
+                    tree.set(item, 'Select', '☑')
+                    tree.item(item, tags=('selected',))
         
-        def toggle_all_selection():
-            """Toggle selection of all items"""
+        def select_all():
+            """Select/deselect all items"""
             if len(selected_items) == len(tree.get_children()):
-                # Unselect all
+                # Deselect all
                 selected_items.clear()
                 for item in tree.get_children():
-                    tree.set(item, '☐', '☐')
+                    tree.set(item, 'Select', '☐')
+                    tree.item(item, tags=('oddrow',) if tree.index(item) % 2 else ('evenrow',))
             else:
                 # Select all
                 selected_items.clear()
                 for item in tree.get_children():
                     selected_items.add(item)
-                    tree.set(item, '☐', '☑')
+                    tree.set(item, 'Select', '☑')
+                    tree.item(item, tags=('selected',))
         
         # Bind events
-        tree.bind('<Button-1>', on_item_click)
-        tree.bind('<Double-Button-1>', lambda e: "break")
+        tree.bind('<Button-1>', lambda e: tree.after(10, lambda: toggle_selection(e) if tree.identify_column(e.x) == '#1' else None))
+        tree.heading('Select', command=select_all)
         
-        # Store selected_items in tree for access from other methods
+        # Store selection reference
         tree.selected_items = selected_items
-        
-        # Configure tags for different statuses - matching member styling
-        tree.tag_configure('oddrow', background='#f8f9fa')
-        tree.tag_configure('evenrow', background='white')
-        tree.tag_configure('selected', background='#e3f2fd')
-        
-        # Status-based styling using foreground colors like member table
-        tree.tag_configure('approved', foreground='#2e7d32')   # Green like active members
-        tree.tag_configure('submitted', foreground='#1565c0')  # Blue for submitted
-        tree.tag_configure('draft', foreground='#f57c00')      # Orange like inactive members
-        tree.tag_configure('rejected', foreground='#d32f2f')   # Red like suspended members
-        tree.tag_configure('in_review', foreground='#6a1b9a')  # Purple for in review
-        tree.tag_configure('normal', foreground='#374151')
         
         return tree, container
 
@@ -807,8 +837,6 @@ class ReportForm:
                 errors.append("❌ Vui lòng chọn loại báo cáo")
             
             period_value = variables['period'].get().strip() if variables['period'].get() else ""
-            if not period_value:
-                errors.append("❌ Kỳ báo cáo không được để trống")
             
             status_value = variables['status'].get()
             if not status_value:
@@ -823,9 +851,18 @@ class ReportForm:
             if len(title_value) > 150:
                 errors.append("❌ Tiêu đề không được vượt quá 150 ký tự")
             
-            # Validate period format (basic check)
-            if period_value and not any(keyword in period_value.lower() for keyword in ['tháng', 'quý', 'năm']):
-                errors.append("❌ Kỳ báo cáo nên bao gồm 'Tháng', 'Quý' hoặc 'Năm'")
+            # Validate period format (more flexible check)
+            if period_value and len(period_value.strip()) > 0:
+                # More flexible validation - accept various period formats
+                period_lower = period_value.lower()
+                valid_keywords = ['tháng', 'quý', 'năm', 'month', 'quarter', 'year', 'q1', 'q2', 'q3', 'q4', 
+                                 '2024', '2025', '2023', 'weekly', 'tuần', 'đặc biệt', 'special']
+                
+                # Check if period contains any valid indicator OR is a reasonable length
+                if not any(keyword in period_lower for keyword in valid_keywords) and len(period_value.strip()) < 3:
+                    errors.append("❌ Kỳ báo cáo không hợp lệ (ví dụ: Tháng 12/2024, Q1-2024, Năm 2024)")
+            elif not period_value or not period_value.strip():
+                errors.append("❌ Kỳ báo cáo không được để trống")
             
             return errors
         
@@ -1000,14 +1037,24 @@ class ReportActions:
             else:
                 tags.append('normal')
             
+            # Format dates properly
+            created_date = report.created_at.strftime('%d/%m/%Y') if hasattr(report, 'created_at') and report.created_at else ''
+            updated_date = report.updated_at.strftime('%d/%m/%Y') if hasattr(report, 'updated_at') and report.updated_at else ''
+            
+            # Get creator name - fallback to ID if name not available
+            creator_name = getattr(report, 'created_by_name', '') or f"User {getattr(report, 'created_by', '')}" if hasattr(report, 'created_by') else ''
+            
+            # Insert với đúng thứ tự cột như đã định nghĩa trong create_enhanced_report_table
             tree.insert('', 'end', values=(
-                '☐',  # Checkbox for enhanced mode
-                report.id,
-                report.title or "",
-                report_type_display_str,
-                report.period or "",
-                status_display_str,
-                created_date
+                '☐',  # Select column
+                report.id,  # ID column
+                report.title or "",  # Tiêu đề column
+                report_type_display_str,  # Loại column
+                report.period or "",  # Kỳ column
+                creator_name,  # Người tạo column
+                created_date,  # Ngày tạo column
+                updated_date,  # Ngày cập nhật column
+                status_display_str  # Trạng thái column - di chuyển về cuối
             ), tags=tags)
     
     @staticmethod

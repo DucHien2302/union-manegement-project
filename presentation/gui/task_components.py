@@ -67,76 +67,101 @@ class TaskTable:
         Returns:
             Tuple of (treeview, container_frame)
         """
-        columns = ('☐', 'ID', 'Tiêu đề', 'Ưu tiên', 'Trạng thái', 'Người thực hiện', 'Hạn hoàn thành', 'Tiến độ')
-        column_widths = {
-            '☐': 40, 'ID': 60, 'Tiêu đề': 220, 'Ưu tiên': 120, 'Trạng thái': 140, 
-            'Người thực hiện': 130, 'Hạn hoàn thành': 120, 'Tiến độ': 80
-        }
+        # Container frame
+        container = tk.Frame(parent, bg=ModernTheme.WHITE)
         
-        # Configure table style
+        # Table frame with header
+        table_frame = tk.Frame(container, bg=ModernTheme.WHITE)
+        table_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Define columns with better structure
+        columns = ('Select', 'ID', 'Tiêu đề', 'Ưu tiên', 'Trạng thái', 'Người thực hiện', 
+                  'Ngày tạo', 'Hạn hoàn thành', 'Tiến độ')
+        
+        # Create treeview với chiều cao lớn hơn và font size lớn hơn
         style = ttk.Style()
         style.configure("Treeview", font=("Arial", 11), rowheight=30)
         style.configure("Treeview.Heading", font=("Arial", 11, "bold"))
         
-        tree, container = BaseTable.create_modern_table(parent, columns, column_widths)
-        tree.configure(height=20)  # Match member enhanced table height
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
         
-        # Enhanced checkbox functionality
+        # Configure column widths và headings - Tăng kích thước
+        column_configs = {
+            'Select': (50, '☐', tk.CENTER),
+            'ID': (60, 'ID', tk.CENTER),
+            'Tiêu đề': (220, 'Tiêu đề công việc', tk.W),
+            'Ưu tiên': (120, 'Độ ưu tiên', tk.CENTER),
+            'Trạng thái': (140, 'Trạng thái', tk.CENTER),
+            'Người thực hiện': (130, 'Người thực hiện', tk.W),
+            'Ngày tạo': (110, 'Ngày tạo', tk.CENTER),
+            'Hạn hoàn thành': (120, 'Hạn hoàn thành', tk.CENTER),
+            'Tiến độ': (80, 'Tiến độ (%)', tk.CENTER)
+        }
+        
+        for col, (width, heading, anchor) in column_configs.items():
+            tree.column(col, width=width, minwidth=width, anchor=anchor)
+            tree.heading(col, text=heading, anchor=anchor)
+        
+        # Configure row styles
+        tree.tag_configure('oddrow', background='#f8f9fa')
+        tree.tag_configure('evenrow', background='white')
+        tree.tag_configure('selected', background='#e3f2fd')
+        tree.tag_configure('completed', foreground='#2e7d32')
+        tree.tag_configure('in_progress', foreground='#1565c0')
+        tree.tag_configure('pending', foreground='#f57c00')
+        tree.tag_configure('paused', foreground='#6a1b9a')
+        tree.tag_configure('cancelled', foreground='#d32f2f')
+        tree.tag_configure('overdue', foreground='#bf360c')
+        
+        # Scrollbars
+        v_scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=tree.yview)
+        h_scrollbar = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL, command=tree.xview)
+        
+        tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        # Pack scrollbars and tree
+        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add selection tracking
         selected_items = set()
         
-        def on_item_click(event):
-            """Handle checkbox toggle on item click"""
-            item = tree.identify('item', event.x, event.y)
-            column = tree.identify('column', event.x, event.y)
-            
-            if item and column == '#1':  # Checkbox column
+        def toggle_selection(event):
+            """Toggle item selection"""
+            item = tree.selection()[0] if tree.selection() else None
+            if item:
                 if item in selected_items:
                     selected_items.remove(item)
-                    tree.set(item, '☐', '☐')
+                    tree.set(item, 'Select', '☐')
+                    tree.item(item, tags=('oddrow',) if tree.index(item) % 2 else ('evenrow',))
                 else:
                     selected_items.add(item)
-                    tree.set(item, '☐', '☑')
-                return "break"
+                    tree.set(item, 'Select', '☑')
+                    tree.item(item, tags=('selected',))
         
-        def toggle_all_selection():
-            """Toggle selection of all items"""
+        def select_all():
+            """Select/deselect all items"""
             if len(selected_items) == len(tree.get_children()):
-                # Unselect all
+                # Deselect all
                 selected_items.clear()
                 for item in tree.get_children():
-                    tree.set(item, '☐', '☐')
+                    tree.set(item, 'Select', '☐')
+                    tree.item(item, tags=('oddrow',) if tree.index(item) % 2 else ('evenrow',))
             else:
                 # Select all
                 selected_items.clear()
                 for item in tree.get_children():
                     selected_items.add(item)
-                    tree.set(item, '☐', '☑')
+                    tree.set(item, 'Select', '☑')
+                    tree.item(item, tags=('selected',))
         
         # Bind events
-        tree.bind('<Button-1>', on_item_click)
-        tree.bind('<Double-Button-1>', lambda e: "break")
+        tree.bind('<Button-1>', lambda e: tree.after(10, lambda: toggle_selection(e) if tree.identify_column(e.x) == '#1' else None))
+        tree.heading('Select', command=select_all)
         
-        # Store selected_items in tree for access from other methods
+        # Store selection reference
         tree.selected_items = selected_items
-        
-        # Additional tags for task priorities and status - matching member styling
-        tree.tag_configure('oddrow', background='#f8f9fa')
-        tree.tag_configure('evenrow', background='white')
-        tree.tag_configure('selected', background='#e3f2fd')
-        
-        # Status-based styling using foreground colors like member table (primary)
-        tree.tag_configure('completed', foreground='#2e7d32')   # Green like active members
-        tree.tag_configure('in_progress', foreground='#1565c0') # Blue for in progress
-        tree.tag_configure('pending', foreground='#f57c00')     # Orange like inactive members
-        tree.tag_configure('paused', foreground='#6a1b9a')      # Purple for paused
-        tree.tag_configure('cancelled', foreground='#d32f2f')   # Red like suspended members
-        tree.tag_configure('overdue', foreground='#bf360c')     # Dark red for overdue
-        
-        # Priority-based styling (secondary, lighter colors)
-        tree.tag_configure('high_priority', foreground='#dc2626')
-        tree.tag_configure('medium_priority', foreground='#d97706') 
-        tree.tag_configure('low_priority', foreground='#0369a1')
-        tree.tag_configure('normal', foreground='#374151')
         
         return tree, container
 
@@ -1116,13 +1141,34 @@ class TaskActions:
     """Task action handlers and utilities"""
     
     @staticmethod
-    def populate_task_tree(tree: ttk.Treeview, tasks: List[Any]):
+    def create_members_map(members: List[Any]) -> dict:
+        """
+        Create a mapping of member IDs to member names
+        
+        Args:
+            members: List of member objects
+            
+        Returns:
+            Dict mapping member IDs to display names
+        """
+        members_map = {}
+        if members:
+            for member in members:
+                if hasattr(member, 'id') and hasattr(member, 'full_name'):
+                    members_map[member.id] = member.full_name
+                elif hasattr(member, 'id') and hasattr(member, 'name'):
+                    members_map[member.id] = member.name
+        return members_map
+    
+    @staticmethod
+    def populate_task_tree(tree: ttk.Treeview, tasks: List[Any], members_map: dict = None):
         """
         Populate task tree with data and apply styling based on priority and status
         
         Args:
             tree: Treeview widget
             tasks: List of task objects
+            members_map: Optional dict mapping member IDs to member names
         """
         # Clear existing items
         for item in tree.get_children():
@@ -1150,8 +1196,8 @@ class TaskActions:
         
         # Add tasks with styling
         if not tasks:
-            # Show empty state
-            tree.insert('', 'end', values=('☐', '', '📝 Không có công việc nào', '', '', '', '', ''))
+            # Show empty state - update to match new column structure
+            tree.insert('', 'end', values=('☐', '', '📝 Không có công việc nào', '', '', '', '', '', ''))
             return
             
         for i, task in enumerate(tasks):
@@ -1164,8 +1210,27 @@ class TaskActions:
             status_display_str = status_display.get(status_str, status_str)
             
             # Format date and progress
+            created_date = ''
+            if hasattr(task, 'created_at') and task.created_at:
+                created_date = task.created_at.strftime('%d/%m/%Y')
+            elif hasattr(task, 'created_date') and task.created_date:
+                created_date = task.created_date.strftime('%d/%m/%Y')
+            
             due_date = task.due_date.strftime('%d/%m/%Y') if hasattr(task, 'due_date') and task.due_date else ''
             progress = f"{task.progress_percentage}%" if hasattr(task, 'progress_percentage') else "0%"
+            
+            # Get assignee name (người thực hiện)
+            assignee_name = ''
+            if hasattr(task, 'assigned_to') and task.assigned_to:
+                if members_map and task.assigned_to in members_map:
+                    # Use member name from map
+                    assignee_name = members_map[task.assigned_to]
+                elif isinstance(task.assigned_to, (int, str)) and str(task.assigned_to).isdigit():
+                    # Show as member ID format
+                    assignee_name = f"Thành viên #{task.assigned_to}"
+                else:
+                    # Show as is if it's already a name
+                    assignee_name = str(task.assigned_to)
             
             # Determine row tags based on status and priority - prioritize status like member styling
             tags = []
@@ -1194,14 +1259,15 @@ class TaskActions:
                     tags.append('normal')
             
             item_id = tree.insert('', 'end', values=(
-                '☐',  # Checkbox for enhanced mode
-                task.id,
-                task.title or "",
-                priority_display_str,
-                status_display_str,
-                task.assigned_to or '',
-                due_date,
-                progress
+                '☐',  # Select checkbox
+                task.id,  # ID
+                task.title or "",  # Tiêu đề
+                priority_display_str,  # Ưu tiên
+                status_display_str,  # Trạng thái
+                assignee_name,  # Người thực hiện
+                created_date,  # Ngày tạo
+                due_date,  # Hạn hoàn thành
+                progress  # Tiến độ
             ), tags=tags)
     
     @staticmethod

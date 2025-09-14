@@ -261,20 +261,36 @@ class ReportController:
         """Xử lý và chuyển đổi dữ liệu báo cáo"""
         processed_data = {}
         
-        # Chuyển đổi loại báo cáo từ string sang enum
+        # Chuyển đổi loại báo cáo từ string sang enum - Xử lý cả emoji version và plain text
         report_type_mapping = {
+            "📅 Báo cáo tháng": ReportType.MONTHLY,
             "Báo cáo tháng": ReportType.MONTHLY,
+            "monthly": ReportType.MONTHLY,
+            "📈 Báo cáo quý": ReportType.QUARTERLY,
             "Báo cáo quý": ReportType.QUARTERLY,
+            "quarterly": ReportType.QUARTERLY,
+            "📋 Báo cáo năm": ReportType.ANNUAL,
             "Báo cáo năm": ReportType.ANNUAL,
-            "Báo cáo đặc biệt": ReportType.SPECIAL
+            "annual": ReportType.ANNUAL,
+            "⭐ Báo cáo đặc biệt": ReportType.SPECIAL,
+            "Báo cáo đặc biệt": ReportType.SPECIAL,
+            "special": ReportType.SPECIAL
         }
         
-        # Chuyển đổi trạng thái từ string sang enum
+        # Chuyển đổi trạng thái từ string sang enum - Xử lý cả emoji version và plain text
         status_mapping = {
+            "📝 Nháp": ReportStatus.DRAFT,
             "Nháp": ReportStatus.DRAFT,
+            "draft": ReportStatus.DRAFT,
+            "📤 Đã nộp": ReportStatus.SUBMITTED,
             "Đã nộp": ReportStatus.SUBMITTED,
+            "submitted": ReportStatus.SUBMITTED,
+            "✅ Đã duyệt": ReportStatus.APPROVED,
             "Đã duyệt": ReportStatus.APPROVED,
-            "Từ chối": ReportStatus.REJECTED
+            "approved": ReportStatus.APPROVED,
+            "❌ Từ chối": ReportStatus.REJECTED,
+            "Từ chối": ReportStatus.REJECTED,
+            "rejected": ReportStatus.REJECTED
         }
         
         # Xử lý các trường
@@ -282,38 +298,39 @@ class ReportController:
         processed_data['period'] = data.get('period', '').strip()
         processed_data['content'] = data.get('content', '').strip()
         processed_data['attachments'] = data.get('attachments', '')
+        processed_data['created_by'] = data.get('created_by', 1)  # Default to user ID 1 if not specified
         
         # Xử lý report_type
-        report_type_str = data.get('report_type', 'Báo cáo tháng')
+        report_type_str = data.get('report_type', '📅 Báo cáo tháng')
         processed_data['report_type'] = report_type_mapping.get(report_type_str, ReportType.MONTHLY)
         
         # Xử lý status
-        status_str = data.get('status', 'Nháp')
+        status_str = data.get('status', '📝 Nháp')
         processed_data['status'] = status_mapping.get(status_str, ReportStatus.DRAFT)
         
         return processed_data
     
     def format_report_data_for_display(self, report: Report) -> Dict[str, str]:
         """Chuyển đổi dữ liệu báo cáo để hiển thị trong form"""
-        # Mapping ngược lại cho hiển thị
+        # Mapping ngược lại cho hiển thị - sử dụng emoji version để đồng nhất
         type_display_mapping = {
-            ReportType.MONTHLY: "Báo cáo tháng",
-            ReportType.QUARTERLY: "Báo cáo quý", 
-            ReportType.ANNUAL: "Báo cáo năm",
-            ReportType.SPECIAL: "Báo cáo đặc biệt"
+            ReportType.MONTHLY: "📅 Báo cáo tháng",
+            ReportType.QUARTERLY: "📈 Báo cáo quý", 
+            ReportType.ANNUAL: "📋 Báo cáo năm",
+            ReportType.SPECIAL: "⭐ Báo cáo đặc biệt"
         }
         
         status_display_mapping = {
-            ReportStatus.DRAFT: "Nháp",
-            ReportStatus.SUBMITTED: "Đã nộp",
-            ReportStatus.APPROVED: "Đã duyệt",
-            ReportStatus.REJECTED: "Từ chối"
+            ReportStatus.DRAFT: "📝 Nháp",
+            ReportStatus.SUBMITTED: "📤 Đã nộp",
+            ReportStatus.APPROVED: "✅ Đã duyệt",
+            ReportStatus.REJECTED: "❌ Từ chối"
         }
         
         return {
             'title': report.title or '',
-            'report_type': type_display_mapping.get(report.report_type, "Báo cáo tháng"),
+            'report_type': type_display_mapping.get(report.report_type, "📅 Báo cáo tháng"),
             'period': report.period or '',
-            'status': status_display_mapping.get(report.status, "Nháp"),
+            'status': status_display_mapping.get(report.status, "📝 Nháp"),
             'content': report.content or ''
         }

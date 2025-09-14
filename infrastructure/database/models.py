@@ -43,6 +43,7 @@ class ReportModel(Base):
     content = Column(Text)
     attachments = Column(Text)  # JSON string
     status = Column(SQLEnum(ReportStatus), nullable=False, default=ReportStatus.DRAFT)
+    created_by = Column(Integer)  # ID của người tạo báo cáo
     submitted_by = Column(Integer)  # Foreign key sẽ được thêm sau
     submitted_at = Column(DateTime)
     approved_by = Column(Integer)  # Foreign key sẽ được thêm sau

@@ -349,7 +349,11 @@ class MainApplication:
             print("🔄 Loading tasks...")
             self.all_tasks = self.task_controller.get_all_tasks()
             print(f"📊 Found {len(self.all_tasks)} tasks")
-            TaskActions.populate_task_tree(self.task_tree, self.all_tasks)
+            
+            # Create members map for displaying member names
+            members_map = TaskActions.create_members_map(self.all_members)
+            
+            TaskActions.populate_task_tree(self.task_tree, self.all_tasks, members_map)
             print("✅ Task tree populated")
             self.update_status(f"Đã tải {len(self.all_tasks)} công việc", temp=True)
         except Exception as e:
@@ -575,15 +579,10 @@ class MainApplication:
                         report = self.report_controller.get_report_by_id(report_id)
                         if report:
                             from domain.entities.report import ReportStatus
-                            # Chuyển đổi thành dictionary cho controller
-                            report_data = {
-                                'title': report.title,
-                                'content': getattr(report, 'content', ''),
-                                'report_type': report.report_type.value if hasattr(report.report_type, 'value') else str(report.report_type),
-                                'period': getattr(report, 'period', ''),
-                                'status': 'Đã duyệt',  # Use Vietnamese display name
-                                'created_by': getattr(report, 'created_by', '')
-                            }
+                            # Sử dụng format_report_data_for_display để có format đúng
+                            report_data = self.report_controller.format_report_data_for_display(report)
+                            # Cập nhật trạng thái
+                            report_data['status'] = '✅ Đã duyệt'  # Use emoji version for consistency
                             self.report_controller.update_report(report_id, report_data)
                             success_count += 1
                     except Exception as e:
@@ -598,15 +597,10 @@ class MainApplication:
                         report = self.report_controller.get_report_by_id(report_id)
                         if report:
                             from domain.entities.report import ReportStatus
-                            # Chuyển đổi thành dictionary cho controller
-                            report_data = {
-                                'title': report.title,
-                                'content': getattr(report, 'content', ''),
-                                'report_type': report.report_type.value if hasattr(report.report_type, 'value') else str(report.report_type),
-                                'period': getattr(report, 'period', ''),
-                                'status': 'Từ chối',  # Use Vietnamese display name
-                                'created_by': getattr(report, 'created_by', '')
-                            }
+                            # Sử dụng format_report_data_for_display để có format đúng
+                            report_data = self.report_controller.format_report_data_for_display(report)
+                            # Cập nhật trạng thái
+                            report_data['status'] = '❌ Từ chối'  # Use emoji version for consistency
                             self.report_controller.update_report(report_id, report_data)
                             success_count += 1
                     except Exception as e:
@@ -942,19 +936,24 @@ class MainApplication:
                 
                 filtered_tasks.append(task)
             
+            # Create members map for displaying member names
+            members_map = TaskActions.create_members_map(self.all_members)
+            
             # Cập nhật table với dữ liệu đã lọc
-            TaskActions.populate_task_tree(self.task_tree, filtered_tasks)
+            TaskActions.populate_task_tree(self.task_tree, filtered_tasks, members_map)
             self.update_status(f"Đã lọc {len(filtered_tasks)}/{len(self.all_tasks)} công việc", temp=True)
             
         except Exception as e:
             print(f"❌ Filter tasks error: {e}")
             # Fallback to show all tasks
-            TaskActions.populate_task_tree(self.task_tree, self.all_tasks)
+            members_map = TaskActions.create_members_map(self.all_members)
+            TaskActions.populate_task_tree(self.task_tree, self.all_tasks, members_map)
             
         except Exception as e:
             print(f"❌ Error filtering tasks: {e}")
             # Fallback to show all tasks
-            TaskActions.populate_task_tree(self.task_tree, self.all_tasks)
+            members_map = TaskActions.create_members_map(self.all_members)
+            TaskActions.populate_task_tree(self.task_tree, self.all_tasks, members_map)
     
     # Header action methods
     def _refresh_all_data(self):
