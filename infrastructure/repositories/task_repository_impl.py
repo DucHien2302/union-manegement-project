@@ -245,6 +245,9 @@ class TaskRepository(ITaskRepository):
             in_progress_tasks = session.query(func.count(TaskModel.id)).filter(
                 TaskModel.status == TaskStatus.IN_PROGRESS
             ).scalar() or 0
+            not_started_tasks = session.query(func.count(TaskModel.id)).filter(
+                TaskModel.status == TaskStatus.NOT_STARTED
+            ).scalar() or 0
             overdue_tasks = session.query(func.count(TaskModel.id)).filter(
                 and_(
                     TaskModel.due_date < datetime.now(),
@@ -254,8 +257,9 @@ class TaskRepository(ITaskRepository):
             
             return {
                 'total': total_tasks,
-                'completed': completed_tasks,
+                'not_started': not_started_tasks,
                 'in_progress': in_progress_tasks,
+                'completed': completed_tasks,
                 'overdue': overdue_tasks,
                 'completion_rate': (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
             }

@@ -364,13 +364,15 @@ class StatisticsWindow:
         
         # Data
         task_stats = self.stats_data['tasks']
+        
+        # Tính toán các trạng thái chính (loại trừ các trạng thái ít dùng)
+        not_started = task_stats.get('not_started', 0)
+        in_progress = task_stats.get('in_progress', 0) 
+        completed = task_stats.get('completed', 0)
+        overdue = task_stats.get('overdue', 0)
+        
         categories = ['Chưa bắt đầu', 'Đang thực hiện', 'Hoàn thành', 'Quá hạn']
-        values = [
-            task_stats.get('not_started', 0),
-            task_stats.get('in_progress', 0),
-            task_stats.get('completed', 0),
-            task_stats.get('overdue', 0)
-        ]
+        values = [not_started, in_progress, completed, overdue]
         
         # Create horizontal bar chart
         bars = ax.barh(categories, values, color=['#94a3b8', '#3b82f6', '#10b981', '#ef4444'])
