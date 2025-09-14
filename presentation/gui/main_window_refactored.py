@@ -213,8 +213,7 @@ class MainApplication:
             self.notebook,
             callbacks={
                 'add_report': self._add_report,
-                'edit_report': self._edit_report,
-                'view_report': self._view_report,
+                'view_report': self._edit_report,  # Gộp view và edit thành một
                 'delete_report': self._delete_report,
                 'approve_report': self._approve_report,
                 'search_reports': self._search_reports,
@@ -231,8 +230,7 @@ class MainApplication:
             self.notebook,
             callbacks={
                 'add_task': self._add_task,
-                'edit_task': self._edit_task,
-                'view_task': self._view_task,
+                'view_task': self._edit_task,  # Gộp view và edit thành một
                 'complete_task': self._complete_task,
                 'delete_task': self._delete_task,
                 'search_tasks': self._search_tasks,
@@ -441,10 +439,6 @@ class MainApplication:
         
         messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
 
-    def _view_report(self):
-        """Xem báo cáo"""
-        self._edit_report()  # Reuse edit for now
-
     def _delete_report(self):
         """Xóa báo cáo"""
         report_id = ReportActions.get_selected_report_id(self.report_tree)
@@ -549,10 +543,6 @@ class MainApplication:
             return
         
         messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
-
-    def _view_task(self):
-        """Xem công việc"""
-        self._edit_task()  # Reuse edit for now
 
     def _delete_task(self):
         """Xóa công việc"""

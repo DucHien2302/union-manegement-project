@@ -351,8 +351,7 @@ class TaskTab:
         
         # Header with enhanced actions
         actions = [
-            ("👁️ Xem", default_callbacks['view_task']),
-            ("✏️ Cập nhật", default_callbacks['edit_task']),
+            ("� Chi tiết", default_callbacks['view_task']),  # Gộp xem và cập nhật
             ("✅ Hoàn thành", default_callbacks['complete_task']),
             ("🗑️ Xóa", default_callbacks['delete_task']),
             ("📊 Xuất Excel", default_callbacks['export_tasks']),
@@ -421,8 +420,7 @@ class TaskTab:
         
         # Context menu for table
         context_menu = tk.Menu(task_tree, tearoff=0)
-        context_menu.add_command(label="👁️ Xem chi tiết", command=default_callbacks['view_task'])
-        context_menu.add_command(label="✏️ Chỉnh sửa", command=default_callbacks['edit_task'])
+        context_menu.add_command(label="� Chi tiết", command=default_callbacks['view_task'])  # Gộp xem và chỉnh sửa
         context_menu.add_separator()
         context_menu.add_command(label="✅ Hoàn thành", command=default_callbacks['complete_task'])
         context_menu.add_command(label="🗑️ Xóa", command=default_callbacks['delete_task'])

@@ -331,13 +331,12 @@ class ReportTab:
         
         # Header with enhanced actions
         actions = [
-            ("👁️ Xem", default_callbacks['view_report']),
-            ("✏️ Sửa", default_callbacks['edit_report']),
+            ("� Chi tiết", default_callbacks['view_report']),  # Gộp xem và sửa
             ("✅ Duyệt", default_callbacks['approve_report']),
             ("🗑️ Xóa", default_callbacks['delete_report']),
             ("📊 Xuất Excel", default_callbacks['export_reports']),
             ("🔄 Làm mới", default_callbacks['refresh_data']),
-            ("📝 Tạo báo cáo", default_callbacks['add_report'])
+            ("➕ Tạo báo cáo", default_callbacks['add_report'])
         ]
         BaseHeader.create_header(report_frame, "Quản lý Báo cáo", actions)
         
@@ -401,8 +400,7 @@ class ReportTab:
         
         # Context menu for table
         context_menu = tk.Menu(report_tree, tearoff=0)
-        context_menu.add_command(label="👁️ Xem chi tiết", command=default_callbacks['view_report'])
-        context_menu.add_command(label="✏️ Chỉnh sửa", command=default_callbacks['edit_report'])
+        context_menu.add_command(label="� Chi tiết", command=default_callbacks['view_report'])  # Gộp xem và sửa
         context_menu.add_separator()
         context_menu.add_command(label="✅ Duyệt", command=default_callbacks['approve_report'])
         context_menu.add_command(label="🗑️ Xóa", command=default_callbacks['delete_report'])
