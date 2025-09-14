@@ -29,42 +29,50 @@ from presentation.gui.task_components import TaskTab, TaskActions, TaskForm
 
 # Import controllers
 from presentation.controllers.report_controller import ReportController
+from presentation.controllers.task_controller import TaskController
 
 
 class MainApplication:
     """Ứng dụng chính với giao diện hiện đại và kiến trúc modular"""
     
     def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("🏛️ Union Management System")
-        self.root.geometry("1400x900")
-        self.root.state('zoomed')  # Maximized trên Windows
-        
-        # Apply modern theme
-        StyleManager.apply_theme_to_root(self.root)
-        
-        # Tạo status bar đầu tiên để tránh lỗi
-        self._create_minimal_status_bar()
-        
-        # Khởi tạo database trước
-        if not self._init_database_on_startup():
-            self.root.destroy()
-            return
-        
-        # Khởi tạo use cases
-        self._init_use_cases()
-        
-        # Khởi tạo controllers
-        self._init_controllers()
-        
-        # Storage for components
-        self.dashboard_cards = {}
-        self.all_members = []
-        self.all_reports = []
-        self.all_tasks = []
-        
-        # Tạo giao diện đầy đủ
-        self._create_widgets()
+        try:
+            self.root = tk.Tk()
+            self.root.title("🏛️ Union Management System")
+            self.root.geometry("1400x900")
+            self.root.state('zoomed')  # Maximized trên Windows
+            
+            # Apply modern theme
+            StyleManager.apply_theme_to_root(self.root)
+            
+            # Tạo status bar đầu tiên để tránh lỗi
+            self._create_minimal_status_bar()
+            
+            # Khởi tạo database trước
+            if not self._init_database_on_startup():
+                self.root.destroy()
+                return
+            
+            # Khởi tạo use cases
+            self._init_use_cases()
+            
+            # Khởi tạo controllers
+            self._init_controllers()
+            
+            # Storage for components
+            self.dashboard_cards = {}
+            self.all_members = []
+            self.all_reports = []
+            self.all_tasks = []
+            
+            # Tạo giao diện đầy đủ
+            self._create_widgets()
+            
+        except Exception as e:
+            print(f"❌ Error during initialization: {e}")
+            if hasattr(self, 'root'):
+                self.root.destroy()
+            raise e
     
     def _create_minimal_status_bar(self):
         """Tạo status bar tối thiểu để tránh lỗi"""
@@ -114,7 +122,8 @@ class MainApplication:
     def _init_controllers(self):
         """Khởi tạo các controllers"""
         try:
-            self.report_controller = ReportController()
+            self.report_controller = ReportController(self.report_use_case)
+            self.task_controller = TaskController(self.task_use_case)
         except Exception as e:
             messagebox.showerror("Lỗi", f"Không thể khởi tạo controllers: {e}")
             self.root.destroy()
@@ -235,6 +244,7 @@ class MainApplication:
                 'add_task': self._add_task,
                 'edit_task': self._edit_task,
                 'complete_task': self._complete_task,
+                'delete_task': self._delete_task,
                 'filter_tasks': self._filter_tasks
             }
         )
@@ -326,7 +336,7 @@ class MainApplication:
         """Làm mới danh sách công việc"""
         try:
             print("🔄 Loading tasks...")
-            self.all_tasks = self.task_use_case.get_all_tasks()
+            self.all_tasks = self.task_controller.get_all_tasks()
             print(f"📊 Found {len(self.all_tasks)} tasks")
             TaskActions.populate_task_tree(self.task_tree, self.all_tasks)
             print("✅ Task tree populated")
@@ -488,10 +498,10 @@ class MainApplication:
         result = TaskForm.create_task_form_dialog(self.root, "Tạo công việc mới")
         if result:
             try:
-                # TODO: Implement actual task creation
-                messagebox.showinfo("Thành công", "Tạo công việc thành công!")
-                self._refresh_tasks()
-                self._refresh_dashboard()
+                success = self.task_controller.create_task(result)
+                if success:
+                    self._refresh_tasks()
+                    self._refresh_dashboard()
             except Exception as e:
                 messagebox.showerror("Lỗi", f"Không thể tạo công việc: {e}")
     
@@ -502,7 +512,27 @@ class MainApplication:
             messagebox.showwarning("Cảnh báo", "Vui lòng chọn công việc cần sửa!")
             return
         
-        messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
+        try:
+            # Lấy thông tin task hiện tại
+            task = self.task_controller.get_task_by_id(task_id)
+            if not task:
+                messagebox.showerror("Lỗi", "Không tìm thấy công việc!")
+                return
+            
+            # Chuyển đổi dữ liệu để hiển thị
+            display_data = self.task_controller.format_task_data_for_display(task)
+            
+            # Hiển thị form sửa
+            result = TaskForm.create_task_form_dialog(
+                self.root, "Chỉnh sửa công việc", display_data)
+            
+            if result:
+                success = self.task_controller.update_task(task_id, result)
+                if success:
+                    self._refresh_tasks()
+                    self._refresh_dashboard()
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể sửa công việc: {e}")
     
     def _complete_task(self):
         """Hoàn thành công việc"""
@@ -511,13 +541,89 @@ class MainApplication:
             messagebox.showwarning("Cảnh báo", "Vui lòng chọn công việc cần hoàn thành!")
             return
         
-        messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
+        try:
+            # Xác nhận
+            confirm = messagebox.askyesno("Xác nhận", "Bạn có chắc muốn đánh dấu hoàn thành công việc này?")
+            if confirm:
+                success = self.task_controller.complete_task(task_id)
+                if success:
+                    self._refresh_tasks()
+                    self._refresh_dashboard()
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể hoàn thành công việc: {e}")
+    
+    def _delete_task(self):
+        """Xóa công việc"""
+        task_id = TaskActions.get_selected_task_id(self.task_tree)
+        if not task_id:
+            messagebox.showwarning("Cảnh báo", "Vui lòng chọn công việc cần xóa!")
+            return
+        
+        try:
+            # Xác nhận xóa
+            confirm = messagebox.askyesno("Xác nhận", "Bạn có chắc muốn xóa công việc này?\nHành động này không thể hoàn tác!")
+            if confirm:
+                success = self.task_controller.delete_task(task_id)
+                if success:
+                    self._refresh_tasks()
+                    self._refresh_dashboard()
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể xóa công việc: {e}")
     
     def _filter_tasks(self, event=None):
         """Lọc công việc theo điều kiện"""
-        priority_filter = self.task_filter_vars['ưu_tiên'].get()
-        status_filter = self.task_filter_vars['trạng_thái'].get()
-        TaskActions.filter_tasks(self.task_tree, priority_filter, status_filter, self.all_tasks)
+        try:
+            # Get both filter values
+            priority_filter = self.task_filter_vars.get('ưu_tiên', tk.StringVar()).get()
+            status_filter = self.task_filter_vars.get('trạng_thái', tk.StringVar()).get()
+            
+            print(f"🔍 Debug - Priority filter: {priority_filter}, Status filter: {status_filter}")
+            
+            # Start with all tasks
+            filtered_tasks = self.all_tasks[:]
+            
+            # Apply priority filter
+            if priority_filter and priority_filter != "Tất cả":
+                priority_mapping = {
+                    'Thấp': 'low',
+                    'Trung bình': 'medium', 
+                    'Cao': 'high',
+                    'Khẩn cấp': 'urgent'
+                }
+                db_priority = priority_mapping.get(priority_filter, priority_filter.lower())
+                
+                temp_filtered = []
+                for task in filtered_tasks:
+                    task_priority = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+                    if task_priority == db_priority:
+                        temp_filtered.append(task)
+                filtered_tasks = temp_filtered
+            
+            # Apply status filter
+            if status_filter and status_filter != "Tất cả":
+                status_mapping = {
+                    'Chờ thực hiện': 'not_started',
+                    'Đang thực hiện': 'in_progress',
+                    'Hoàn thành': 'completed',
+                    'Tạm dừng': 'on_hold'
+                }
+                db_status = status_mapping.get(status_filter, status_filter.lower())
+                
+                temp_filtered = []
+                for task in filtered_tasks:
+                    task_status = task.status.value if hasattr(task.status, 'value') else str(task.status)
+                    if task_status == db_status:
+                        temp_filtered.append(task)
+                filtered_tasks = temp_filtered
+            
+            # Update tree with filtered results
+            TaskActions.populate_task_tree(self.task_tree, filtered_tasks)
+            print(f"✅ Filtered {len(filtered_tasks)} tasks from {len(self.all_tasks)} total")
+            
+        except Exception as e:
+            print(f"❌ Error filtering tasks: {e}")
+            # Fallback to show all tasks
+            TaskActions.populate_task_tree(self.task_tree, self.all_tasks)
     
     # Header action methods
     def _refresh_all_data(self):
@@ -543,5 +649,9 @@ class MainApplication:
 
 
 if __name__ == "__main__":
-    app = MainApplication()
-    app.run()
+    try:
+        app = MainApplication()
+        app.run()
+    except Exception as e:
+        print(f"❌ Application failed to start: {e}")
+        input("Press Enter to exit...")
