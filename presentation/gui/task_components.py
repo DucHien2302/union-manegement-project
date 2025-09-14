@@ -234,97 +234,270 @@ class TaskForm:
                 var = tk.StringVar()
                 
                 if field_name == "priority":
-                    values = ["Thấp", "Trung bình", "Cao", "Khẩn cấp"]
+                    # Enhanced priority picker with visual indicators
+                    values = ["🟢 Thấp", "🟡 Trung bình", "🟠 Cao", "🔴 Khẩn cấp"]
+                    priority_colors = {
+                        "🟢 Thấp": ModernTheme.SUCCESS,
+                        "🟡 Trung bình": ModernTheme.WARNING, 
+                        "🟠 Cao": "#fd7f28",
+                        "🔴 Khẩn cấp": ModernTheme.DANGER
+                    }
                 else:  # status
-                    values = ["Chờ thực hiện", "Đang thực hiện", "Hoàn thành", "Tạm dừng"]
+                    # Enhanced status picker with visual indicators
+                    values = ["⏸️ Chờ thực hiện", "⚡ Đang thực hiện", "✅ Hoàn thành", "⏸️ Tạm dừng"]
+                    status_colors = {
+                        "⏸️ Chờ thực hiện": ModernTheme.GRAY_500,
+                        "⚡ Đang thực hiện": ModernTheme.PRIMARY,
+                        "✅ Hoàn thành": ModernTheme.SUCCESS,
+                        "⏸️ Tạm dừng": ModernTheme.WARNING
+                    }
                 
-                combo = ttk.Combobox(field_frame, textvariable=var, values=values, 
-                                   state="readonly", font=ModernTheme.FONT_PRIMARY)
-                combo.pack(fill=tk.X, pady=(4, 0))
+                # Create custom picker container
+                picker_container = tk.Frame(field_frame, bg=ModernTheme.WHITE)
+                picker_container.pack(fill=tk.X, pady=(4, 0))
+                
+                # Enhanced combobox with better styling
+                combo_style = ttk.Style()
+                combo_style.configure("Modern.TCombobox",
+                                     fieldbackground=ModernTheme.GRAY_50,
+                                     background=ModernTheme.WHITE,
+                                     borderwidth=1,
+                                     relief="solid")
+                
+                combo = ttk.Combobox(picker_container, textvariable=var, values=values, 
+                                   state="readonly", font=ModernTheme.FONT_PRIMARY,
+                                   style="Modern.TCombobox", height=6)
+                combo.pack(fill=tk.X, ipady=8)
+                
+                # Color indicator frame
+                indicator_frame = tk.Frame(picker_container, bg=ModernTheme.WHITE, height=4)
+                indicator_frame.pack(fill=tk.X, pady=(2, 0))
+                
+                color_indicator = tk.Frame(indicator_frame, height=3, bg=ModernTheme.GRAY_200)
+                color_indicator.pack(fill=tk.X)
+                
+                # Update color indicator when selection changes
+                def update_color_indicator(event=None):
+                    selected_value = var.get()
+                    if field_name == "priority" and selected_value in priority_colors:
+                        color_indicator.configure(bg=priority_colors[selected_value])
+                    elif field_name == "status" and selected_value in status_colors:
+                        color_indicator.configure(bg=status_colors[selected_value])
+                    else:
+                        color_indicator.configure(bg=ModernTheme.GRAY_200)
+                
+                combo.bind('<<ComboboxSelected>>', update_color_indicator)
+                var.trace('w', lambda *args: update_color_indicator())
                 
                 # Set initial value if task_data exists
                 if task_data and field_name in task_data:
                     initial_value = task_data[field_name]
                     print(f"🔍 Debug - Setting {field_name} to: {initial_value}")
-                    if initial_value in values:
-                        combo.set(initial_value)
-                        var.set(initial_value)
+                    
+                    # Map plain text to emoji versions
+                    value_mapping = {}
+                    if field_name == "priority":
+                        value_mapping = {
+                            "Thấp": "🟢 Thấp", "low": "🟢 Thấp",
+                            "Trung bình": "🟡 Trung bình", "medium": "🟡 Trung bình",
+                            "Cao": "🟠 Cao", "high": "🟠 Cao",
+                            "Khẩn cấp": "🔴 Khẩn cấp", "urgent": "🔴 Khẩn cấp"
+                        }
+                    else:  # status
+                        value_mapping = {
+                            "Chờ thực hiện": "⏸️ Chờ thực hiện", "not_started": "⏸️ Chờ thực hiện",
+                            "Đang thực hiện": "⚡ Đang thực hiện", "in_progress": "⚡ Đang thực hiện",
+                            "Hoàn thành": "✅ Hoàn thành", "completed": "✅ Hoàn thành",
+                            "Tạm dừng": "⏸️ Tạm dừng", "on_hold": "⏸️ Tạm dừng"
+                        }
+                    
+                    # Find matching value
+                    display_value = value_mapping.get(initial_value, initial_value)
+                    if display_value in values:
+                        combo.set(display_value)
+                        var.set(display_value)
+                        update_color_indicator()
                     else:
-                        print(f"⚠️ Warning - Value '{initial_value}' not found in {values}")
-                        # Try to find partial match
-                        for value in values:
-                            if initial_value.lower() in value.lower() or value.lower() in initial_value.lower():
-                                combo.set(value)
-                                var.set(value)
-                                print(f"✅ Found partial match: {value}")
+                        # Try partial match
+                        for key, val in value_mapping.items():
+                            if initial_value.lower() in key.lower() or key.lower() in initial_value.lower():
+                                combo.set(val)
+                                var.set(val)
+                                update_color_indicator()
+                                print(f"✅ Found partial match: {val}")
                                 break
                 
                 variables[field_name] = var
                 
             elif field_type == "text":
-                # Text area
-                text_frame = tk.Frame(field_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
-                text_frame.pack(fill=tk.X, pady=(4, 0))
+                # Enhanced text area with better styling
+                text_container = tk.Frame(field_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                text_container.pack(fill=tk.X, pady=(4, 0))
+                
+                # Text widget with scrollbar
+                text_frame = tk.Frame(text_container, bg=ModernTheme.GRAY_50)
+                text_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
                 
                 text_widget = tk.Text(text_frame, height=4, 
                                     font=ModernTheme.FONT_PRIMARY,
                                     bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
-                                    relief=tk.FLAT, bd=5, wrap=tk.WORD)
-                text_widget.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+                                    relief=tk.FLAT, bd=0, wrap=tk.WORD,
+                                    selectbackground=ModernTheme.PRIMARY,
+                                    selectforeground=ModernTheme.WHITE)
+                
+                # Add scrollbar for text areas
+                scrollbar_text = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text_widget.yview)
+                text_widget.configure(yscrollcommand=scrollbar_text.set)
+                
+                text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                scrollbar_text.pack(side=tk.RIGHT, fill=tk.Y)
+                
+                # Focus effects for text area
+                def on_text_focus_in(event):
+                    text_container.configure(bg=ModernTheme.PRIMARY, relief=tk.SOLID, bd=1)
+                    
+                def on_text_focus_out(event):
+                    text_container.configure(bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                
+                text_widget.bind('<FocusIn>', on_text_focus_in)
+                text_widget.bind('<FocusOut>', on_text_focus_out)
+                
+                # Add character counter for description
+                if field_name == "description":
+                    char_count_frame = tk.Frame(field_frame, bg=ModernTheme.WHITE)
+                    char_count_frame.pack(fill=tk.X, pady=(2, 0))
+                    
+                    char_count_label = tk.Label(char_count_frame, text="0 ký tự", 
+                                              font=('Segoe UI', 8), 
+                                              bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    char_count_label.pack(side=tk.RIGHT)
+                    
+                    def update_char_count(*args):
+                        content = text_widget.get("1.0", tk.END).strip()
+                        char_count = len(content)
+                        char_count_label.configure(text=f"{char_count} ký tự")
+                    
+                    # Bind to text changes
+                    def on_text_change(event):
+                        text_widget.after_idle(update_char_count)
+                    
+                    text_widget.bind('<KeyRelease>', on_text_change)
+                    text_widget.bind('<Button-1>', on_text_change)
+                    text_widget.bind('<Control-v>', on_text_change)  # Paste
+                
+                # Add field-specific hints
+                if field_name == "description":
+                    hint_label = tk.Label(field_frame, text="💡 Mô tả chi tiết về công việc cần thực hiện", 
+                                        font=('Segoe UI', 9), 
+                                        bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    hint_label.pack(anchor=tk.W, pady=(2, 0))
+                elif field_name == "notes":
+                    hint_label = tk.Label(field_frame, text="💡 Ghi chú thêm hoặc hướng dẫn đặc biệt", 
+                                        font=('Segoe UI', 9), 
+                                        bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    hint_label.pack(anchor=tk.W, pady=(2, 0))
                 
                 if task_data and field_name in task_data:
                     text_widget.insert(tk.END, str(task_data[field_name]))
+                    if field_name == "description":
+                        update_char_count()
                 
                 variables[field_name] = text_widget  # Store widget instead of StringVar
                 
             elif field_type == "date":
-                # Date picker field
+                # Enhanced date picker field
                 var = tk.StringVar()
                 date_frame = tk.Frame(field_frame, bg=ModernTheme.WHITE)
                 date_frame.pack(fill=tk.X, pady=(4, 0))
                 
-                # Date entry
-                entry = tk.Entry(date_frame, textvariable=var, 
+                # Date input container with border
+                input_container = tk.Frame(date_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                input_container.pack(fill=tk.X)
+                
+                # Date entry with better styling
+                entry = tk.Entry(input_container, textvariable=var, 
                                font=ModernTheme.FONT_PRIMARY,
                                bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
-                               relief=tk.FLAT, bd=5, width=15)
-                entry.pack(side=tk.LEFT)
+                               relief=tk.FLAT, bd=0, width=15)
+                entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=8)
                 
-                # Date picker button  
+                # Enhanced date picker button  
                 def create_date_picker_command(date_var):
                     def open_date_picker():
                         try:
                             from tkinter import simpledialog
                             import datetime
                             
-                            # Simple date input dialog
-                            date_str = simpledialog.askstring("Chọn ngày", 
-                                                             "Nhập ngày (DD/MM/YYYY):",
-                                                             initialvalue=date_var.get())
+                            # Enhanced date input dialog with better instructions
+                            current_date = datetime.datetime.now().strftime('%d/%m/%Y')
+                            initial_value = date_var.get() if date_var.get() else current_date
+                            
+                            date_str = simpledialog.askstring(
+                                "📅 Chọn ngày hạn hoàn thành", 
+                                f"Nhập ngày hạn hoàn thành (DD/MM/YYYY):\n\nVí dụ: {current_date}",
+                                initialvalue=initial_value
+                            )
                             if date_str:
                                 # Validate date format
                                 try:
-                                    datetime.datetime.strptime(date_str, '%d/%m/%Y')
-                                    date_var.set(date_str)
+                                    parsed_date = datetime.datetime.strptime(date_str, '%d/%m/%Y')
+                                    # Check if date is in the past (optional warning)
+                                    if parsed_date.date() < datetime.datetime.now().date():
+                                        from tkinter import messagebox
+                                        if messagebox.askyesno("⚠️ Cảnh báo", 
+                                                             "Ngày đã chọn đã qua. Bạn có muốn tiếp tục không?"):
+                                            date_var.set(date_str)
+                                    else:
+                                        date_var.set(date_str)
                                 except ValueError:
                                     from tkinter import messagebox
-                                    messagebox.showerror("Lỗi", "Định dạng ngày không đúng. Sử dụng DD/MM/YYYY")
+                                    messagebox.showerror("❌ Lỗi", 
+                                                       "Định dạng ngày không đúng!\n\nVui lòng sử dụng định dạng: DD/MM/YYYY\nVí dụ: 25/12/2024")
                         except Exception as e:
                             print(f"Date picker error: {e}")
                     return open_date_picker
                 
-                date_btn = tk.Button(date_frame, text="📅", 
-                                   font=ModernTheme.FONT_PRIMARY,
+                # Styled date picker button
+                date_btn = tk.Button(input_container, text="📅", 
+                                   font=('Segoe UI', 14),
                                    bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
-                                   border=0, cursor="hand2", padx=8, pady=4,
+                                   border=0, cursor="hand2", padx=12, pady=8,
                                    command=create_date_picker_command(var))
-                date_btn.pack(side=tk.LEFT, padx=(5, 0))
+                date_btn.pack(side=tk.RIGHT)
                 
-                # Help text
-                help_label = tk.Label(date_frame, text="(DD/MM/YYYY)", 
-                                    font=('Segoe UI', 8), 
-                                    bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
-                help_label.pack(side=tk.LEFT, padx=(5, 0))
+                # Enhanced help text
+                help_frame = tk.Frame(date_frame, bg=ModernTheme.WHITE)
+                help_frame.pack(fill=tk.X, pady=(4, 0))
+                
+                help_label = tk.Label(help_frame, text="💡 Định dạng: DD/MM/YYYY (ví dụ: 25/12/2024)", 
+                                    font=('Segoe UI', 9), 
+                                    bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500,
+                                    anchor=tk.W)
+                help_label.pack(side=tk.LEFT)
+                
+                # Quick date buttons for common selections
+                quick_dates_frame = tk.Frame(help_frame, bg=ModernTheme.WHITE)
+                quick_dates_frame.pack(side=tk.RIGHT)
+                
+                def set_quick_date(days_offset):
+                    import datetime
+                    target_date = datetime.datetime.now() + datetime.timedelta(days=days_offset)
+                    var.set(target_date.strftime('%d/%m/%Y'))
+                
+                # Quick date buttons
+                quick_buttons = [
+                    ("Hôm nay", 0),
+                    ("1 tuần", 7),
+                    ("1 tháng", 30)
+                ]
+                
+                for btn_text, offset in quick_buttons:
+                    quick_btn = tk.Button(quick_dates_frame, text=btn_text,
+                                        font=('Segoe UI', 8),
+                                        bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
+                                        border=0, cursor="hand2", padx=8, pady=2,
+                                        command=lambda d=offset: set_quick_date(d))
+                    quick_btn.pack(side=tk.LEFT, padx=(2, 0))
                 
                 if task_data and field_name in task_data:
                     entry.insert(0, str(task_data[field_name]))
@@ -332,7 +505,7 @@ class TaskForm:
                 variables[field_name] = var
                 
             elif field_type == "number":
-                # Number input with validation
+                # Enhanced number input with visual progress bar
                 var = tk.StringVar()
                 number_frame = tk.Frame(field_frame, bg=ModernTheme.WHITE)
                 number_frame.pack(fill=tk.X, pady=(4, 0))
@@ -351,32 +524,130 @@ class TaskForm:
                 
                 vcmd = (dialog.register(validate_number), '%P')
                 
-                entry = tk.Entry(number_frame, textvariable=var, 
+                # Input container with styling
+                input_container = tk.Frame(number_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                input_container.pack(fill=tk.X)
+                
+                entry = tk.Entry(input_container, textvariable=var, 
                                font=ModernTheme.FONT_PRIMARY,
                                bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
-                               relief=tk.FLAT, bd=5, width=10,
-                               validate='key', validatecommand=vcmd)
-                entry.pack(side=tk.LEFT)
+                               relief=tk.FLAT, bd=0, width=10,
+                               validate='key', validatecommand=vcmd,
+                               justify=tk.CENTER)
+                entry.pack(side=tk.LEFT, padx=10, pady=8)
                 
-                # Min/Max labels
+                # Percentage symbol
+                percent_label = tk.Label(input_container, text="%", 
+                                       font=ModernTheme.FONT_PRIMARY, 
+                                       bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_700)
+                percent_label.pack(side=tk.LEFT, padx=(0, 10))
+                
                 if field_name == "progress_percentage":
-                    range_label = tk.Label(number_frame, text="(0-100)", 
-                                         font=('Segoe UI', 8), 
+                    # Progress visualization
+                    progress_frame = tk.Frame(number_frame, bg=ModernTheme.WHITE)
+                    progress_frame.pack(fill=tk.X, pady=(8, 0))
+                    
+                    # Progress bar background
+                    progress_bg = tk.Frame(progress_frame, bg=ModernTheme.GRAY_200, height=6)
+                    progress_bg.pack(fill=tk.X)
+                    
+                    # Progress bar fill
+                    progress_fill = tk.Frame(progress_bg, bg=ModernTheme.SUCCESS, height=6)
+                    progress_fill.place(x=0, y=0, relheight=1, relwidth=0)
+                    
+                    # Progress labels
+                    progress_labels_frame = tk.Frame(number_frame, bg=ModernTheme.WHITE)
+                    progress_labels_frame.pack(fill=tk.X, pady=(4, 0))
+                    
+                    # Quick percentage buttons
+                    quick_percentages = [0, 25, 50, 75, 100]
+                    for pct in quick_percentages:
+                        def set_percentage(percentage):
+                            var.set(str(percentage))
+                            update_progress_bar()
+                        
+                        btn = tk.Button(progress_labels_frame, text=f"{pct}%",
+                                      font=('Segoe UI', 8),
+                                      bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
+                                      border=0, cursor="hand2", padx=6, pady=2,
+                                      command=lambda p=pct: set_percentage(p))
+                        btn.pack(side=tk.LEFT, padx=(2, 0))
+                    
+                    # Update progress bar function
+                    def update_progress_bar(*args):
+                        try:
+                            value = var.get()
+                            if value:
+                                percentage = int(value)
+                                if 0 <= percentage <= 100:
+                                    width = percentage / 100
+                                    progress_fill.place(relwidth=width)
+                                    
+                                    # Change color based on progress
+                                    if percentage < 30:
+                                        progress_fill.configure(bg=ModernTheme.DANGER)
+                                    elif percentage < 70:
+                                        progress_fill.configure(bg=ModernTheme.WARNING)
+                                    else:
+                                        progress_fill.configure(bg=ModernTheme.SUCCESS)
+                                else:
+                                    progress_fill.place(relwidth=0)
+                            else:
+                                progress_fill.place(relwidth=0)
+                        except (ValueError, tk.TclError):
+                            progress_fill.place(relwidth=0)
+                    
+                    # Bind update function
+                    var.trace('w', update_progress_bar)
+                    entry.bind('<KeyRelease>', lambda e: update_progress_bar())
+                    
+                    # Range info
+                    range_label = tk.Label(number_frame, text="💡 Phạm vi: 0-100%", 
+                                         font=('Segoe UI', 9), 
                                          bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
-                    range_label.pack(side=tk.LEFT, padx=(5, 0))
+                    range_label.pack(anchor=tk.W, pady=(4, 0))
                 
                 if task_data and field_name in task_data:
                     entry.insert(0, str(task_data[field_name]))
+                    if field_name == "progress_percentage":
+                        update_progress_bar()
                 
                 variables[field_name] = var
                 
             else:  # entry
                 var = tk.StringVar()
-                entry = tk.Entry(field_frame, textvariable=var, 
+                
+                # Enhanced entry field with better styling
+                entry_container = tk.Frame(field_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                entry_container.pack(fill=tk.X, pady=(4, 0))
+                
+                entry = tk.Entry(entry_container, textvariable=var, 
                                font=ModernTheme.FONT_PRIMARY,
                                bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
-                               relief=tk.FLAT, bd=5)
-                entry.pack(fill=tk.X, pady=(4, 0))
+                               relief=tk.FLAT, bd=0)
+                entry.pack(fill=tk.X, padx=10, pady=8)
+                
+                # Add placeholder text and focus effects
+                def on_focus_in(event):
+                    entry_container.configure(bg=ModernTheme.PRIMARY, relief=tk.SOLID, bd=1)
+                    
+                def on_focus_out(event):
+                    entry_container.configure(bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                
+                entry.bind('<FocusIn>', on_focus_in)
+                entry.bind('<FocusOut>', on_focus_out)
+                
+                # Add field-specific hints
+                if field_name == "title":
+                    hint_label = tk.Label(field_frame, text="💡 Nhập tiêu đề ngắn gọn và rõ ràng", 
+                                        font=('Segoe UI', 9), 
+                                        bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    hint_label.pack(anchor=tk.W, pady=(2, 0))
+                elif field_name == "assigned_to":
+                    hint_label = tk.Label(field_frame, text="💡 Tên người thực hiện hoặc nhóm", 
+                                        font=('Segoe UI', 9), 
+                                        bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    hint_label.pack(anchor=tk.W, pady=(2, 0))
                 
                 if task_data and field_name in task_data:
                     entry.insert(0, str(task_data[field_name]))
@@ -398,12 +669,17 @@ class TaskForm:
             errors = []
             
             # Check required fields
-            if not variables['title'].get().strip():
-                errors.append("Tiêu đề công việc không được để trống")
-            if not variables['priority'].get():
-                errors.append("Vui lòng chọn mức độ ưu tiên")
-            if not variables['status'].get():
-                errors.append("Vui lòng chọn trạng thái")
+            title_value = variables['title'].get().strip() if variables['title'].get() else ""
+            if not title_value:
+                errors.append("❌ Tiêu đề công việc không được để trống")
+            
+            priority_value = variables['priority'].get()
+            if not priority_value:
+                errors.append("❌ Vui lòng chọn mức độ ưu tiên")
+            
+            status_value = variables['status'].get()
+            if not status_value:
+                errors.append("❌ Vui lòng chọn trạng thái")
             
             # Validate progress percentage
             try:
@@ -411,9 +687,27 @@ class TaskForm:
                 if progress:
                     progress_num = int(progress)
                     if not (0 <= progress_num <= 100):
-                        errors.append("Tiến độ phải từ 0 đến 100%")
+                        errors.append("❌ Tiến độ phải từ 0 đến 100%")
             except ValueError:
-                errors.append("Tiến độ phải là số nguyên")
+                errors.append("❌ Tiến độ phải là số nguyên")
+            
+            # Validate date format if provided
+            due_date = variables.get('due_date', {}).get() if 'due_date' in variables else ""
+            if due_date:
+                try:
+                    import datetime
+                    datetime.datetime.strptime(due_date, '%d/%m/%Y')
+                except ValueError:
+                    errors.append("❌ Định dạng ngày không đúng. Sử dụng DD/MM/YYYY")
+            
+            # Validate title length
+            if len(title_value) > 100:
+                errors.append("❌ Tiêu đề không được vượt quá 100 ký tự")
+            
+            # Validate assigned_to field
+            assigned_to = variables.get('assigned_to', {}).get() if 'assigned_to' in variables else ""
+            if assigned_to and len(assigned_to) > 50:
+                errors.append("❌ Tên người thực hiện không được vượt quá 50 ký tự")
             
             return errors
         
@@ -424,7 +718,8 @@ class TaskForm:
             errors = validate_form()
             if errors:
                 from tkinter import messagebox
-                messagebox.showerror("Lỗi", "\n".join(errors))
+                error_message = "Vui lòng kiểm tra lại các thông tin sau:\n\n" + "\n".join(errors)
+                messagebox.showerror("⚠️ Lỗi nhập liệu", error_message)
                 return
             
             # Collect form data
@@ -432,7 +727,26 @@ class TaskForm:
                 if isinstance(var, tk.Text):
                     result[field_name] = var.get("1.0", tk.END).strip()
                 else:
-                    result[field_name] = var.get()
+                    value = var.get()
+                    # Convert emoji values back to plain text for database storage
+                    if field_name == "priority":
+                        priority_reverse_mapping = {
+                            "🟢 Thấp": "Thấp",
+                            "🟡 Trung bình": "Trung bình", 
+                            "🟠 Cao": "Cao",
+                            "🔴 Khẩn cấp": "Khẩn cấp"
+                        }
+                        result[field_name] = priority_reverse_mapping.get(value, value)
+                    elif field_name == "status":
+                        status_reverse_mapping = {
+                            "⏸️ Chờ thực hiện": "Chờ thực hiện",
+                            "⚡ Đang thực hiện": "Đang thực hiện",
+                            "✅ Hoàn thành": "Hoàn thành",
+                            "⏸️ Tạm dừng": "Tạm dừng"
+                        }
+                        result[field_name] = status_reverse_mapping.get(value, value)
+                    else:
+                        result[field_name] = value
             is_saved = True
             dialog.destroy()
         
@@ -442,25 +756,45 @@ class TaskForm:
             is_saved = False
             dialog.destroy()
         
-        # Create buttons with better styling and spacing
+        # Create buttons with enhanced styling and spacing
         button_container = tk.Frame(button_frame, bg=ModernTheme.WHITE)
         button_container.pack(expand=True, fill=tk.BOTH)
         
-        cancel_btn = tk.Button(button_container, text="Hủy", 
+        # Enhanced cancel button
+        cancel_btn = tk.Button(button_container, text="❌ Hủy bỏ", 
                               font=ModernTheme.FONT_PRIMARY,
                               bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
-                              border=0, cursor="hand2", padx=30, pady=10,
+                              border=0, cursor="hand2", padx=25, pady=12,
                               command=on_cancel)
         cancel_btn.pack(side=tk.RIGHT, padx=(ModernTheme.PADDING_SMALL, ModernTheme.PADDING_MEDIUM), 
                        pady=ModernTheme.PADDING_SMALL)
         
-        save_btn = tk.Button(button_container, text="Lưu", 
+        # Enhanced save button
+        save_btn = tk.Button(button_container, text="💾 Lưu thông tin", 
                             font=ModernTheme.FONT_PRIMARY,
                             bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
-                            border=0, cursor="hand2", padx=30, pady=10,
+                            border=0, cursor="hand2", padx=25, pady=12,
                             command=on_save)
         save_btn.pack(side=tk.RIGHT, padx=(0, ModernTheme.PADDING_SMALL), 
                      pady=ModernTheme.PADDING_SMALL)
+        
+        # Button hover effects
+        def on_save_hover_enter(event):
+            save_btn.configure(bg=ModernTheme.PRIMARY_DARK)
+        
+        def on_save_hover_leave(event):
+            save_btn.configure(bg=ModernTheme.PRIMARY)
+            
+        def on_cancel_hover_enter(event):
+            cancel_btn.configure(bg=ModernTheme.GRAY_200)
+        
+        def on_cancel_hover_leave(event):
+            cancel_btn.configure(bg=ModernTheme.GRAY_100)
+        
+        save_btn.bind('<Enter>', on_save_hover_enter)
+        save_btn.bind('<Leave>', on_save_hover_leave)
+        cancel_btn.bind('<Enter>', on_cancel_hover_enter)
+        cancel_btn.bind('<Leave>', on_cancel_hover_leave)
         
         # Keyboard shortcuts
         dialog.bind('<Control-s>', lambda e: on_save())  # Ctrl+S to save

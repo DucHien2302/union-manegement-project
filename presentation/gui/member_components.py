@@ -355,8 +355,9 @@ class MemberForm:
         # Create dialog window
         dialog = tk.Toplevel(parent)
         dialog.title(title)
-        dialog.geometry("550x700")
-        dialog.resizable(False, False)
+        dialog.geometry("580x750")
+        dialog.resizable(True, True)  # Allow resizing for better scrollbar functionality
+        dialog.minsize(550, 600)  # Set minimum size
         dialog.grab_set()  # Make it modal
         
         # Center the dialog
@@ -365,11 +366,12 @@ class MemberForm:
         
         result = {}
         
-        # Main container with scrollbar
-        main_canvas = tk.Canvas(dialog, bg=ModernTheme.WHITE)
+        # Enhanced main container with improved scrollbar
+        main_canvas = tk.Canvas(dialog, bg=ModernTheme.WHITE, highlightthickness=0)
         scrollbar = ttk.Scrollbar(dialog, orient="vertical", command=main_canvas.yview)
         scrollable_frame = tk.Frame(main_canvas, bg=ModernTheme.WHITE)
         
+        # Configure scrollbar
         scrollable_frame.bind(
             "<Configure>",
             lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
@@ -378,8 +380,22 @@ class MemberForm:
         main_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         main_canvas.configure(yscrollcommand=scrollbar.set)
         
-        main_canvas.pack(side="left", fill="both", expand=True, padx=20, pady=20)
-        scrollbar.pack(side="right", fill="y")
+        # Mouse wheel binding for better scrolling
+        def _on_mousewheel(event):
+            main_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        # Bind mouse wheel to canvas and all child widgets
+        def bind_to_mousewheel(widget):
+            widget.bind("<MouseWheel>", _on_mousewheel)
+            for child in widget.winfo_children():
+                bind_to_mousewheel(child)
+        
+        dialog.bind("<MouseWheel>", _on_mousewheel)
+        main_canvas.bind("<MouseWheel>", _on_mousewheel)
+        
+        # Pack scrollbar and canvas
+        main_canvas.pack(side="left", fill="both", expand=True, padx=(20, 5), pady=20)
+        scrollbar.pack(side="right", fill="y", padx=(0, 20), pady=20)
         
         # Title
         title_frame = tk.Frame(scrollable_frame, bg=ModernTheme.WHITE)
@@ -443,121 +459,338 @@ class MemberForm:
                 widget = None
                 
                 if field_type == "combo":
-                    widget = ttk.Combobox(field_frame, textvariable=var, values=options, 
-                                        state="readonly", font=("Arial", 10))
-                    widget.pack(fill=tk.X, pady=(4, 0))
+                    # Enhanced combo picker with visual indicators
+                    if field_name == "gender":
+                        # Enhanced gender picker with icons
+                        values = ["👨 Nam", "👩 Nữ", "⚧️ Khác"]
+                        gender_colors = {
+                            "👨 Nam": ModernTheme.INFO,
+                            "👩 Nữ": "#e91e63",
+                            "⚧️ Khác": ModernTheme.ACCENT
+                        }
+                        color_mapping = gender_colors
+                    elif field_name == "department":
+                        # Enhanced department picker with icons
+                        values = ["🏢 Hành chính", "🔧 Kỹ thuật", "💰 Tài chính", "👥 Nhân sự", "📋 Khác"]
+                        dept_colors = {
+                            "🏢 Hành chính": ModernTheme.PRIMARY,
+                            "🔧 Kỹ thuật": ModernTheme.WARNING,
+                            "💰 Tài chính": ModernTheme.SUCCESS,
+                            "👥 Nhân sự": ModernTheme.INFO,
+                            "📋 Khác": ModernTheme.GRAY_500
+                        }
+                        color_mapping = dept_colors
+                    elif field_name == "member_type":
+                        # Enhanced member type picker with icons
+                        values = ["👤 Đoàn viên", "👥 Hội viên", "👔 Ban chấp hành"]
+                        type_colors = {
+                            "👤 Đoàn viên": ModernTheme.PRIMARY,
+                            "👥 Hội viên": ModernTheme.SUCCESS,
+                            "👔 Ban chấp hành": ModernTheme.ACCENT
+                        }
+                        color_mapping = type_colors
+                    elif field_name == "status":
+                        # Enhanced status picker with icons
+                        values = ["✅ Đang hoạt động", "⏸️ Tạm ngưng", "❌ Đình chỉ"]
+                        status_colors = {
+                            "✅ Đang hoạt động": ModernTheme.SUCCESS,
+                            "⏸️ Tạm ngưng": ModernTheme.WARNING,
+                            "❌ Đình chỉ": ModernTheme.DANGER
+                        }
+                        color_mapping = status_colors
+                    else:
+                        values = options or []
+                        color_mapping = {}
+                    
+                    # Create custom picker container
+                    picker_container = tk.Frame(field_frame, bg=ModernTheme.WHITE)
+                    picker_container.pack(fill=tk.X, pady=(4, 0))
+                    
+                    # Enhanced combobox with better styling
+                    combo_style = ttk.Style()
+                    combo_style.configure("Member.TCombobox",
+                                         fieldbackground=ModernTheme.GRAY_50,
+                                         background=ModernTheme.WHITE,
+                                         borderwidth=1,
+                                         relief="solid")
+                    
+                    widget = ttk.Combobox(picker_container, textvariable=var, values=values, 
+                                        state="readonly", font=("Arial", 10),
+                                        style="Member.TCombobox", height=6)
+                    widget.pack(fill=tk.X, ipady=8)
+                    
+                    # Color indicator frame if colors available
+                    if color_mapping:
+                        indicator_frame = tk.Frame(picker_container, bg=ModernTheme.WHITE, height=4)
+                        indicator_frame.pack(fill=tk.X, pady=(2, 0))
+                        
+                        color_indicator = tk.Frame(indicator_frame, height=3, bg=ModernTheme.GRAY_200)
+                        color_indicator.pack(fill=tk.X)
+                        
+                        # Update color indicator when selection changes
+                        def update_color_indicator(event=None):
+                            selected_value = var.get()
+                            if selected_value in color_mapping:
+                                color_indicator.configure(bg=color_mapping[selected_value])
+                            else:
+                                color_indicator.configure(bg=ModernTheme.GRAY_200)
+                        
+                        widget.bind('<<ComboboxSelected>>', update_color_indicator)
+                        var.trace('w', lambda *args: update_color_indicator())
+                    
+                    # Add field-specific hints
+                    if field_name == "member_type":
+                        hint_label = tk.Label(picker_container, text="💡 Chọn loại thành viên phù hợp", 
+                                            font=('Arial', 8), 
+                                            bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                        hint_label.pack(anchor=tk.W, pady=(2, 0))
+                    elif field_name == "department":
+                        hint_label = tk.Label(picker_container, text="💡 Phòng ban hoặc bộ phận công tác", 
+                                            font=('Arial', 8), 
+                                            bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                        hint_label.pack(anchor=tk.W, pady=(2, 0))
                     
                 elif field_type == "text":
-                    widget = tk.Text(field_frame, height=3, 
+                    # Enhanced text area with better styling
+                    text_container = tk.Frame(field_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                    text_container.pack(fill=tk.X, pady=(4, 0))
+                    
+                    # Text widget with scrollbar
+                    text_frame = tk.Frame(text_container, bg=ModernTheme.GRAY_50)
+                    text_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+                    
+                    widget = tk.Text(text_frame, height=3, 
                                    font=("Arial", 10),
                                    bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
-                                   relief=tk.FLAT, bd=1, padx=5, pady=5,
-                                   wrap=tk.WORD)
-                    widget.pack(fill=tk.X, pady=(4, 0))
+                                   relief=tk.FLAT, bd=0, wrap=tk.WORD,
+                                   selectbackground=ModernTheme.PRIMARY,
+                                   selectforeground=ModernTheme.WHITE)
+                    
+                    # Add scrollbar for text areas
+                    scrollbar_text = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=widget.yview)
+                    widget.configure(yscrollcommand=scrollbar_text.set)
+                    
+                    widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                    scrollbar_text.pack(side=tk.RIGHT, fill=tk.Y)
+                    
+                    # Focus effects for text area
+                    def on_text_focus_in(event):
+                        text_container.configure(bg=ModernTheme.PRIMARY, relief=tk.SOLID, bd=1)
+                        
+                    def on_text_focus_out(event):
+                        text_container.configure(bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                    
+                    widget.bind('<FocusIn>', on_text_focus_in)
+                    widget.bind('<FocusOut>', on_text_focus_out)
+                    
+                    # Add character counter for address and notes
+                    if field_name in ["address", "notes"]:
+                        count_frame = tk.Frame(field_frame, bg=ModernTheme.WHITE)
+                        count_frame.pack(fill=tk.X, pady=(2, 0))
+                        
+                        char_count_label = tk.Label(count_frame, text="0 ký tự", 
+                                                  font=('Arial', 8), 
+                                                  bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                        char_count_label.pack(side=tk.RIGHT)
+                        
+                        def update_char_count(*args):
+                            content = widget.get("1.0", tk.END).strip()
+                            char_count = len(content)
+                            char_count_label.configure(text=f"{char_count} ký tự")
+                        
+                        # Bind to text changes
+                        def on_text_change(event):
+                            widget.after_idle(update_char_count)
+                        
+                        widget.bind('<KeyRelease>', on_text_change)
+                        widget.bind('<Button-1>', on_text_change)
+                        widget.bind('<Control-v>', on_text_change)  # Paste
+                        
+                        # Add field-specific hints
+                        if field_name == "address":
+                            hint_label = tk.Label(count_frame, text="💡 Địa chỉ liên hệ chi tiết", 
+                                                font=('Arial', 8), 
+                                                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                            hint_label.pack(side=tk.LEFT)
+                        elif field_name == "notes":
+                            hint_label = tk.Label(count_frame, text="💡 Ghi chú thêm về thành viên", 
+                                                font=('Arial', 8), 
+                                                bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                            hint_label.pack(side=tk.LEFT)
                     
                 elif field_type == "date":
+                    # Enhanced date picker field
                     date_frame = tk.Frame(field_frame, bg=ModernTheme.WHITE)
                     date_frame.pack(fill=tk.X, pady=(4, 0))
                     
-                    widget = tk.Entry(date_frame, textvariable=var, 
+                    # Date input container with border
+                    input_container = tk.Frame(date_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                    input_container.pack(fill=tk.X)
+                    
+                    widget = tk.Entry(input_container, textvariable=var, 
                                     font=("Arial", 10),
                                     bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
-                                    relief=tk.FLAT, bd=1, width=12)
-                    widget.pack(side=tk.LEFT)
+                                    relief=tk.FLAT, bd=0, width=12)
+                    widget.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, pady=8)
                     
-                    # Date picker function với proper closure
+                    # Enhanced date picker function
                     def create_date_picker(entry_var):
                         def show_picker():
-                            # Tạo popup window
-                            picker_window = tk.Toplevel()
-                            picker_window.title("Chọn ngày")
-                            picker_window.geometry("250x200")
-                            picker_window.resizable(False, False)
-                            picker_window.grab_set()
+                            from tkinter import simpledialog
+                            import datetime
                             
-                            # Center window
-                            picker_window.transient(field_frame.winfo_toplevel())
+                            # Enhanced date input dialog
+                            current_date = datetime.datetime.now().strftime('%d/%m/%Y')
+                            initial_value = entry_var.get() if entry_var.get() else current_date
                             
-                            # Current date
-                            now = datetime.datetime.now()
-                            
-                            # Year selection
-                            year_frame = tk.Frame(picker_window)
-                            year_frame.pack(pady=10)
-                            tk.Label(year_frame, text="Năm:").pack(side=tk.LEFT, padx=5)
-                            year_var = tk.StringVar(value=str(now.year))
-                            year_spinbox = tk.Spinbox(year_frame, from_=1950, to=2030, 
-                                                    textvariable=year_var, width=8)
-                            year_spinbox.pack(side=tk.LEFT, padx=5)
-                            
-                            # Month selection
-                            month_frame = tk.Frame(picker_window)
-                            month_frame.pack(pady=5)
-                            tk.Label(month_frame, text="Tháng:").pack(side=tk.LEFT, padx=5)
-                            month_var = tk.StringVar(value=str(now.month))
-                            month_spinbox = tk.Spinbox(month_frame, from_=1, to=12,
-                                                     textvariable=month_var, width=8)
-                            month_spinbox.pack(side=tk.LEFT, padx=5)
-                            
-                            # Day selection
-                            day_frame = tk.Frame(picker_window)
-                            day_frame.pack(pady=5)
-                            tk.Label(day_frame, text="Ngày:").pack(side=tk.LEFT, padx=5)
-                            day_var = tk.StringVar(value=str(now.day))
-                            day_spinbox = tk.Spinbox(day_frame, from_=1, to=31,
-                                                   textvariable=day_var, width=8)
-                            day_spinbox.pack(side=tk.LEFT, padx=5)
-                            
-                            # Buttons
-                            btn_frame = tk.Frame(picker_window)
-                            btn_frame.pack(pady=20)
-                            
-                            def apply_date():
+                            date_str = simpledialog.askstring(
+                                "📅 Chọn ngày", 
+                                f"Nhập ngày (DD/MM/YYYY):\n\nVí dụ: {current_date}",
+                                initialvalue=initial_value
+                            )
+                            if date_str:
+                                # Validate date format
                                 try:
-                                    day = int(day_var.get())
-                                    month = int(month_var.get())
-                                    year = int(year_var.get())
-                                    entry_var.set(f"{day:02d}/{month:02d}/{year}")
-                                    picker_window.destroy()
-                                except Exception as e:
-                                    print(f"Error setting date: {e}")
-                            
-                            def set_today():
-                                try:
-                                    today = datetime.datetime.now()
-                                    entry_var.set(f"{today.day:02d}/{today.month:02d}/{today.year}")
-                                    picker_window.destroy()
-                                except Exception as e:
-                                    print(f"Error setting today: {e}")
-                            
-                            tk.Button(btn_frame, text="Áp dụng", command=apply_date,
-                                    bg="#007bff", fg="white", padx=10).pack(side=tk.LEFT, padx=5)
-                            tk.Button(btn_frame, text="Hôm nay", command=set_today,
-                                    bg="#28a745", fg="white", padx=10).pack(side=tk.LEFT, padx=5)
-                            tk.Button(btn_frame, text="Hủy", command=picker_window.destroy,
-                                    bg="#6c757d", fg="white", padx=10).pack(side=tk.LEFT, padx=5)
-                        
+                                    parsed_date = datetime.datetime.strptime(date_str, '%d/%m/%Y')
+                                    entry_var.set(date_str)
+                                except ValueError:
+                                    from tkinter import messagebox
+                                    messagebox.showerror("❌ Lỗi", 
+                                                       "Định dạng ngày không đúng!\n\nVui lòng sử dụng định dạng: DD/MM/YYYY\nVí dụ: 25/12/1990")
                         return show_picker
                     
-                    # Date picker button
-                    date_btn = tk.Button(date_frame, text="📅", 
-                                       font=("Arial", 10),
+                    # Styled date picker button
+                    date_btn = tk.Button(input_container, text="📅", 
+                                       font=('Arial', 12),
                                        bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
-                                       border=0, cursor="hand2", padx=8, pady=2,
+                                       border=0, cursor="hand2", padx=12, pady=8,
                                        command=create_date_picker(var))
-                    date_btn.pack(side=tk.LEFT, padx=(5, 0))
+                    date_btn.pack(side=tk.RIGHT)
                     
-                    date_help = tk.Label(date_frame, text="(dd/mm/yyyy)", 
-                                       font=("Arial", 8),
-                                       bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
-                    date_help.pack(side=tk.LEFT, padx=(10, 0))
+                    # Enhanced help and quick date buttons
+                    help_frame = tk.Frame(date_frame, bg=ModernTheme.WHITE)
+                    help_frame.pack(fill=tk.X, pady=(4, 0))
+                    
+                    help_label = tk.Label(help_frame, text="💡 Định dạng: DD/MM/YYYY", 
+                                        font=('Arial', 8), 
+                                        bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500,
+                                        anchor=tk.W)
+                    help_label.pack(side=tk.LEFT)
+                    
+                    # Quick date buttons for common selections (especially for join_date)
+                    if field_name == "join_date":
+                        quick_dates_frame = tk.Frame(help_frame, bg=ModernTheme.WHITE)
+                        quick_dates_frame.pack(side=tk.RIGHT)
+                        
+                        def set_current_date():
+                            import datetime
+                            today = datetime.datetime.now()
+                            var.set(today.strftime('%d/%m/%Y'))
+                        
+                        today_btn = tk.Button(quick_dates_frame, text="Hôm nay",
+                                            font=('Arial', 8),
+                                            bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
+                                            border=0, cursor="hand2", padx=8, pady=2,
+                                            command=set_current_date)
+                        today_btn.pack(side=tk.LEFT, padx=(2, 0))
                     
                 else:  # entry
-                    widget = tk.Entry(field_frame, textvariable=var, 
+                    # Enhanced entry field with better styling
+                    entry_container = tk.Frame(field_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                    entry_container.pack(fill=tk.X, pady=(4, 0))
+                    
+                    widget = tk.Entry(entry_container, textvariable=var, 
                                     font=("Arial", 10),
                                     bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
-                                    relief=tk.FLAT, bd=1)
-                    widget.pack(fill=tk.X, pady=(4, 0))
+                                    relief=tk.FLAT, bd=0)
+                    widget.pack(fill=tk.X, padx=10, pady=8)
+                    
+                    # Add placeholder text and focus effects
+                    def on_focus_in(event):
+                        entry_container.configure(bg=ModernTheme.PRIMARY, relief=tk.SOLID, bd=1)
+                        
+                    def on_focus_out(event):
+                        entry_container.configure(bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                    
+                    widget.bind('<FocusIn>', on_focus_in)
+                    widget.bind('<FocusOut>', on_focus_out)
+                    
+                    # Add field-specific hints and validation
+                    hint_frame = tk.Frame(field_frame, bg=ModernTheme.WHITE)
+                    hint_frame.pack(fill=tk.X, pady=(2, 0))
+                    
+                    if field_name == "member_code":
+                        hint_label = tk.Label(hint_frame, text="💡 Mã thành viên duy nhất (ví dụ: TV2024001)", 
+                                            font=('Arial', 8), 
+                                            bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                        hint_label.pack(side=tk.LEFT)
+                        
+                        # Auto-generate button
+                        def auto_generate_code():
+                            import datetime
+                            now = datetime.datetime.now()
+                            year = now.year
+                            # Simple auto-generation (in real app, you'd check existing codes)
+                            code = f"TV{year}{now.month:02d}{now.day:02d}{now.hour:02d}{now.minute:02d}"
+                            var.set(code)
+                        
+                        auto_btn = tk.Button(hint_frame, text="🎲 Tự động tạo",
+                                           font=('Arial', 8),
+                                           bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
+                                           border=0, cursor="hand2", padx=6, pady=2,
+                                           command=auto_generate_code)
+                        auto_btn.pack(side=tk.RIGHT)
+                        
+                    elif field_name == "full_name":
+                        hint_label = tk.Label(hint_frame, text="💡 Họ và tên đầy đủ của thành viên", 
+                                            font=('Arial', 8), 
+                                            bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                        hint_label.pack(side=tk.LEFT)
+                        
+                    elif field_name == "phone":
+                        hint_label = tk.Label(hint_frame, text="💡 Số điện thoại liên hệ (ví dụ: 0901234567)", 
+                                            font=('Arial', 8), 
+                                            bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                        hint_label.pack(side=tk.LEFT)
+                        
+                        # Phone validation indicator
+                        def validate_phone(*args):
+                            phone_value = var.get().strip()
+                            if phone_value:
+                                clean_phone = phone_value.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
+                                if clean_phone.isdigit() and len(clean_phone) >= 10:
+                                    hint_label.configure(text="✅ Số điện thoại hợp lệ", fg=ModernTheme.SUCCESS)
+                                else:
+                                    hint_label.configure(text="❌ Số điện thoại không hợp lệ", fg=ModernTheme.DANGER)
+                            else:
+                                hint_label.configure(text="💡 Số điện thoại liên hệ (ví dụ: 0901234567)", fg=ModernTheme.GRAY_500)
+                        
+                        var.trace('w', validate_phone)
+                        
+                    elif field_name == "email":
+                        hint_label = tk.Label(hint_frame, text="💡 Địa chỉ email (ví dụ: email@example.com)", 
+                                            font=('Arial', 8), 
+                                            bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                        hint_label.pack(side=tk.LEFT)
+                        
+                        # Email validation indicator
+                        def validate_email(*args):
+                            email_value = var.get().strip()
+                            if email_value:
+                                if '@' in email_value and '.' in email_value.split('@')[1]:
+                                    hint_label.configure(text="✅ Email hợp lệ", fg=ModernTheme.SUCCESS)
+                                else:
+                                    hint_label.configure(text="❌ Email không hợp lệ", fg=ModernTheme.DANGER)
+                            else:
+                                hint_label.configure(text="💡 Địa chỉ email (ví dụ: email@example.com)", fg=ModernTheme.GRAY_500)
+                        
+                        var.trace('w', validate_email)
+                        
+                    elif field_name == "position":
+                        hint_label = tk.Label(hint_frame, text="💡 Chức vụ hiện tại của thành viên", 
+                                            font=('Arial', 8), 
+                                            bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                        hint_label.pack(side=tk.LEFT)
                 
                 # Set existing values
                 if member_data and field_name in member_data:
@@ -569,6 +802,45 @@ class MemberForm:
                             var.set(value.strftime('%d/%m/%Y'))
                         else:
                             var.set(str(value))
+                    elif field_type == "combo":
+                        # Map plain text to emoji versions for display
+                        value_mapping = {}
+                        if field_name == "gender":
+                            value_mapping = {
+                                "Nam": "👨 Nam", "male": "👨 Nam",
+                                "Nữ": "👩 Nữ", "female": "👩 Nữ", 
+                                "Khác": "⚧️ Khác", "other": "⚧️ Khác"
+                            }
+                        elif field_name == "department":
+                            value_mapping = {
+                                "Hành chính": "🏢 Hành chính", "admin": "🏢 Hành chính",
+                                "Kỹ thuật": "🔧 Kỹ thuật", "technical": "🔧 Kỹ thuật",
+                                "Tài chính": "💰 Tài chính", "finance": "💰 Tài chính",
+                                "Nhân sự": "👥 Nhân sự", "hr": "👥 Nhân sự",
+                                "Khác": "📋 Khác", "other": "📋 Khác"
+                            }
+                        elif field_name == "member_type":
+                            value_mapping = {
+                                "Đoàn viên": "👤 Đoàn viên", "union_member": "👤 Đoàn viên",
+                                "Hội viên": "👥 Hội viên", "association_member": "👥 Hội viên",
+                                "Ban chấp hành": "👔 Ban chấp hành", "executive": "👔 Ban chấp hành"
+                            }
+                        elif field_name == "status":
+                            value_mapping = {
+                                "Đang hoạt động": "✅ Đang hoạt động", "active": "✅ Đang hoạt động",
+                                "Tạm ngưng": "⏸️ Tạm ngưng", "inactive": "⏸️ Tạm ngưng",
+                                "Đình chỉ": "❌ Đình chỉ", "suspended": "❌ Đình chỉ"
+                            }
+                        
+                        # Find matching display value
+                        display_value = value_mapping.get(str(value), str(value))
+                        if hasattr(widget, 'set'):
+                            widget.set(display_value)
+                        var.set(display_value)
+                        
+                        # Update color indicator if available
+                        if 'update_color_indicator' in locals():
+                            update_color_indicator()
                     else:
                         var.set(str(value) if value else "")
                 
@@ -594,7 +866,7 @@ class MemberForm:
         button_frame = tk.Frame(scrollable_frame, bg=ModernTheme.WHITE)
         button_frame.pack(fill=tk.X, pady=(20, 0))
         
-        # Validation function
+        # Enhanced validation function
         def validate_form():
             errors = []
             
@@ -605,23 +877,51 @@ class MemberForm:
                         'member_code': 'Mã thành viên',
                         'full_name': 'Họ và tên'
                     }.get(field_name, field_name)
-                    errors.append(f"• {field_label} không được để trống")
+                    errors.append(f"❌ {field_label} không được để trống")
             
-            # Email validation
+            # Enhanced email validation
             email_value = variables.get('email', [tk.StringVar()])[0].get().strip()
-            if email_value and '@' not in email_value:
-                errors.append("• Email không hợp lệ")
+            if email_value:
+                if '@' not in email_value or '.' not in email_value.split('@')[1]:
+                    errors.append("❌ Email không hợp lệ - phải có dạng email@domain.com")
             
-            # Phone validation
+            # Enhanced phone validation
             phone_value = variables.get('phone', [tk.StringVar()])[0].get().strip()
             if phone_value:
                 clean_phone = phone_value.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
                 if not clean_phone.isdigit():
-                    errors.append("• Số điện thoại không hợp lệ")
+                    errors.append("❌ Số điện thoại chỉ được chứa số")
+                elif len(clean_phone) < 10:
+                    errors.append("❌ Số điện thoại phải có ít nhất 10 chữ số")
+            
+            # Date validation
+            for field_name in ['date_of_birth', 'join_date']:
+                if field_name in variables:
+                    date_value = variables[field_name][0].get().strip()
+                    if date_value:
+                        try:
+                            parsed_date = datetime.datetime.strptime(date_value, '%d/%m/%Y')
+                            # Check reasonable date ranges
+                            if field_name == 'date_of_birth':
+                                current_year = datetime.datetime.now().year
+                                birth_year = parsed_date.year
+                                if birth_year < 1920 or birth_year > current_year - 16:
+                                    errors.append("❌ Ngày sinh không hợp lý (từ 1920 đến hiện tại - 16 tuổi)")
+                            elif field_name == 'join_date':
+                                if parsed_date > datetime.datetime.now():
+                                    errors.append("❌ Ngày tham gia không thể là tương lai")
+                        except ValueError:
+                            field_display = "Ngày sinh" if field_name == 'date_of_birth' else "Ngày tham gia"
+                            errors.append(f"❌ {field_display} không đúng định dạng DD/MM/YYYY")
+            
+            # Member code uniqueness (basic check - you might want to check against database)
+            member_code = variables.get('member_code', [tk.StringVar()])[0].get().strip()
+            if member_code and len(member_code) < 5:
+                errors.append("❌ Mã thành viên phải có ít nhất 5 ký tự")
             
             return errors
         
-        # Buttons
+        # Enhanced save function
         def on_save():
             # Validate form
             errors = validate_form()
@@ -637,8 +937,41 @@ class MemberForm:
                     result[field_name] = widget.get("1.0", tk.END).strip()
                 else:
                     value = var.get().strip()
+                    
+                    # Convert emoji values back to plain text for database storage
+                    if field_type == "combo":
+                        reverse_mapping = {}
+                        if field_name == "gender":
+                            reverse_mapping = {
+                                "👨 Nam": "Nam",
+                                "👩 Nữ": "Nữ",
+                                "⚧️ Khác": "Khác"
+                            }
+                        elif field_name == "department":
+                            reverse_mapping = {
+                                "🏢 Hành chính": "Hành chính",
+                                "🔧 Kỹ thuật": "Kỹ thuật",
+                                "💰 Tài chính": "Tài chính",
+                                "👥 Nhân sự": "Nhân sự",
+                                "📋 Khác": "Khác"
+                            }
+                        elif field_name == "member_type":
+                            reverse_mapping = {
+                                "👤 Đoàn viên": "Đoàn viên",
+                                "👥 Hội viên": "Hội viên",
+                                "👔 Ban chấp hành": "Ban chấp hành"
+                            }
+                        elif field_name == "status":
+                            reverse_mapping = {
+                                "✅ Đang hoạt động": "Đang hoạt động",
+                                "⏸️ Tạm ngưng": "Tạm ngưng",
+                                "❌ Đình chỉ": "Đình chỉ"
+                            }
+                        
+                        result[field_name] = reverse_mapping.get(value, value)
+                    
                     # Convert date strings
-                    if field_type == "date" and value:
+                    elif field_type == "date" and value:
                         try:
                             result[field_name] = datetime.datetime.strptime(value, '%d/%m/%Y')
                         except ValueError:
@@ -652,30 +985,62 @@ class MemberForm:
             result.clear()
             dialog.destroy()
         
-        # Button styling
-        cancel_btn = tk.Button(button_frame, text="❌ Hủy", 
+        # Enhanced button styling
+        cancel_btn = tk.Button(button_frame, text="❌ Hủy bỏ", 
                               font=("Arial", 10),
                               bg=ModernTheme.GRAY_200, fg=ModernTheme.GRAY_700,
-                              border=0, cursor="hand2", padx=25, pady=10,
+                              border=0, cursor="hand2", padx=25, pady=12,
                               command=on_cancel)
         cancel_btn.pack(side=tk.RIGHT)
         
-        save_btn = tk.Button(button_frame, text="💾 Lưu", 
+        save_btn = tk.Button(button_frame, text="💾 Lưu thành viên", 
                             font=("Arial", 10),
                             bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
-                            border=0, cursor="hand2", padx=25, pady=10,
+                            border=0, cursor="hand2", padx=25, pady=12,
                             command=on_save)
         save_btn.pack(side=tk.RIGHT, padx=(0, 10))
+        
+        # Button hover effects
+        def on_save_hover_enter(event):
+            save_btn.configure(bg=ModernTheme.PRIMARY_DARK)
+        
+        def on_save_hover_leave(event):
+            save_btn.configure(bg=ModernTheme.PRIMARY)
+            
+        def on_cancel_hover_enter(event):
+            cancel_btn.configure(bg=ModernTheme.GRAY_300)
+        
+        def on_cancel_hover_leave(event):
+            cancel_btn.configure(bg=ModernTheme.GRAY_200)
+        
+        save_btn.bind('<Enter>', on_save_hover_enter)
+        save_btn.bind('<Leave>', on_save_hover_leave)
+        cancel_btn.bind('<Enter>', on_cancel_hover_enter)
+        cancel_btn.bind('<Leave>', on_cancel_hover_leave)
         
         # Bind Enter key to save
         dialog.bind('<Return>', lambda e: on_save())
         dialog.bind('<Escape>', lambda e: on_cancel())
         
-        # Focus on first field
+        # Focus on first field and update scrollregion
         if variables:
             first_field = list(variables.values())[0]
             if first_field[1] and hasattr(first_field[1], 'focus'):
                 first_field[1].focus()
+        
+        # Update scrollbar after dialog is fully rendered
+        def update_scroll_region():
+            dialog.update_idletasks()
+            main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+            # Ensure scrollbar is visible if needed
+            bbox = main_canvas.bbox("all")
+            if bbox and bbox[3] > main_canvas.winfo_height():
+                scrollbar.pack(side="right", fill="y", padx=(0, 20), pady=20)
+        
+        dialog.after(100, update_scroll_region)
+        
+        # Bind mousewheel to scrollable frame after it's created
+        dialog.after(50, lambda: bind_to_mousewheel(scrollable_frame))
         
         # Wait for dialog to close
         dialog.wait_window()
@@ -997,7 +1362,7 @@ class MemberActions:
     @staticmethod
     def show_member_details(parent, member_data: Dict):
         """
-        Show detailed member information in a popup window
+        Show detailed member information in a popup window with scrollbar
         
         Args:
             parent: Parent widget
@@ -1005,8 +1370,9 @@ class MemberActions:
         """
         detail_window = tk.Toplevel(parent)
         detail_window.title(f"Chi tiết thành viên - {member_data.get('full_name', 'N/A')}")
-        detail_window.geometry("600x500")
-        detail_window.resizable(False, False)
+        detail_window.geometry("650x600")
+        detail_window.resizable(True, True)  # Allow resizing
+        detail_window.minsize(600, 500)  # Set minimum size
         detail_window.grab_set()
         
         # Center the window
@@ -1016,19 +1382,44 @@ class MemberActions:
             parent.winfo_rooty() + 50
         ))
         
-        # Main container
-        main_frame = tk.Frame(detail_window, bg=ModernTheme.WHITE)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        # Create scrollable main container
+        main_canvas = tk.Canvas(detail_window, bg=ModernTheme.WHITE, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(detail_window, orient="vertical", command=main_canvas.yview)
+        scrollable_frame = tk.Frame(main_canvas, bg=ModernTheme.WHITE)
+        
+        # Configure scrollbar
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+        )
+        
+        main_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        main_canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Mouse wheel binding for better scrolling
+        def _on_mousewheel(event):
+            main_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        detail_window.bind("<MouseWheel>", _on_mousewheel)
+        main_canvas.bind("<MouseWheel>", _on_mousewheel)
+        
+        # Pack scrollbar and canvas
+        main_canvas.pack(side="left", fill="both", expand=True, padx=(20, 5), pady=20)
+        scrollbar.pack(side="right", fill="y", padx=(0, 20), pady=20)
+        
+        # Content container inside scrollable frame
+        content_frame = tk.Frame(scrollable_frame, bg=ModernTheme.WHITE)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
         
         # Title
-        title_label = tk.Label(main_frame, 
+        title_label = tk.Label(content_frame, 
                               text=f"👤 {member_data.get('full_name', 'N/A')}", 
                               font=("Arial", 16, "bold"),
                               bg=ModernTheme.WHITE, fg=ModernTheme.PRIMARY)
         title_label.pack(pady=(0, 20))
         
         # Details in two columns
-        details_frame = tk.Frame(main_frame, bg=ModernTheme.WHITE)
+        details_frame = tk.Frame(content_frame, bg=ModernTheme.WHITE)
         details_frame.pack(fill=tk.BOTH, expand=True)
         
         left_frame = tk.Frame(details_frame, bg=ModernTheme.WHITE)
@@ -1077,7 +1468,7 @@ class MemberActions:
         
         # Notes section (full width)
         if member_data.get('notes'):
-            notes_frame = tk.Frame(main_frame, bg=ModernTheme.WHITE)
+            notes_frame = tk.Frame(content_frame, bg=ModernTheme.WHITE)
             notes_frame.pack(fill=tk.X, pady=(20, 0))
             
             notes_label = tk.Label(notes_frame, text="Ghi chú:", 
@@ -1095,11 +1486,19 @@ class MemberActions:
             notes_text.config(state=tk.DISABLED)
         
         # Close button
-        close_btn = tk.Button(main_frame, text="Đóng", 
+        close_btn = tk.Button(content_frame, text="❌ Đóng", 
                              font=("Arial", 10),
                              bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
-                             border=0, cursor="hand2", padx=30, pady=8,
+                             border=0, cursor="hand2", padx=30, pady=12,
                              command=detail_window.destroy)
+        close_btn.pack(pady=(20, 0))
+        
+        # Update scrollbar after window is fully rendered
+        def update_scroll_region():
+            detail_window.update_idletasks()
+            main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+        
+        detail_window.after(100, update_scroll_region)
         close_btn.pack(pady=(20, 0))
 
 
