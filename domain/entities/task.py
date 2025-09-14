@@ -17,6 +17,7 @@ class TaskStatus(Enum):
     NOT_STARTED = "not_started"  # Chưa bắt đầu
     IN_PROGRESS = "in_progress"  # Đang thực hiện
     COMPLETED = "completed"  # Hoàn thành
+    ON_HOLD = "on_hold"  # Tạm dừng
     CANCELLED = "cancelled"  # Hủy bỏ
     OVERDUE = "overdue"  # Quá hạn
 
@@ -29,7 +30,7 @@ class Task:
     description: str = ""
     priority: TaskPriority = TaskPriority.MEDIUM
     status: TaskStatus = TaskStatus.NOT_STARTED
-    assigned_to: Optional[int] = None  # ID của người được giao
+    assigned_to: Optional[int] = None  # ID của người được giao (foreign key to members)
     assigned_by: Optional[int] = None  # ID của người giao việc
     start_date: Optional[datetime] = None
     due_date: Optional[datetime] = None

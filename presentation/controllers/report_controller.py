@@ -21,10 +21,14 @@ logger = logging.getLogger(__name__)
 class ReportController:
     """Controller cho quản lý báo cáo"""
     
-    def __init__(self):
+    def __init__(self, report_use_case: ReportManagementUseCase = None):
         """Khởi tạo controller"""
-        self.report_repository = ReportRepository()
-        self.report_use_case = ReportManagementUseCase(self.report_repository)
+        if report_use_case:
+            self.report_use_case = report_use_case
+        else:
+            # Fallback to create use case internally
+            self.report_repository = ReportRepository()
+            self.report_use_case = ReportManagementUseCase(self.report_repository)
         logger.info("ReportController khởi tạo thành công")
     
     def get_all_reports(self) -> List[Report]:
