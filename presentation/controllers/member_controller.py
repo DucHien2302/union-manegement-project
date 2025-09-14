@@ -141,7 +141,7 @@ class MemberController:
             
             # Hiển thị form chỉnh sửa
             form_data = MemberForm.create_member_form_dialog(
-                self.parent, f"Chỉnh sửa thành viên - {member.full_name}", current_data
+                self.parent, f"Chỉnh sửa thành viên", current_data
             )
             
             if not form_data:

@@ -219,56 +219,276 @@ class ReportForm:
                 var = tk.StringVar()
                 
                 if field_name == "report_type":
-                    values = ["Báo cáo tháng", "Báo cáo quý", "Báo cáo năm", "Báo cáo đặc biệt"]
+                    # Enhanced report type picker with visual indicators
+                    values = ["📅 Báo cáo tháng", "📈 Báo cáo quý", "📋 Báo cáo năm", "⭐ Báo cáo đặc biệt"]
+                    type_colors = {
+                        "📅 Báo cáo tháng": ModernTheme.INFO,
+                        "📈 Báo cáo quý": ModernTheme.SUCCESS,
+                        "📋 Báo cáo năm": ModernTheme.WARNING,
+                        "⭐ Báo cáo đặc biệt": ModernTheme.ACCENT
+                    }
                 else:  # status
-                    values = ["Nháp", "Đã nộp", "Đã duyệt", "Từ chối"]
+                    # Enhanced status picker with visual indicators
+                    values = ["📝 Nháp", "📤 Đã nộp", "✅ Đã duyệt", "❌ Từ chối"]
+                    status_colors = {
+                        "📝 Nháp": ModernTheme.GRAY_500,
+                        "📤 Đã nộp": ModernTheme.PRIMARY,
+                        "✅ Đã duyệt": ModernTheme.SUCCESS,
+                        "❌ Từ chối": ModernTheme.DANGER
+                    }
                 
-                combo = ttk.Combobox(field_frame, textvariable=var, values=values, 
-                                   state="readonly", font=ModernTheme.FONT_PRIMARY)
-                combo.pack(fill=tk.X, pady=(4, 0))
+                # Create custom picker container
+                picker_container = tk.Frame(field_frame, bg=ModernTheme.WHITE)
+                picker_container.pack(fill=tk.X, pady=(4, 0))
+                
+                # Enhanced combobox with better styling
+                combo_style = ttk.Style()
+                combo_style.configure("Modern.TCombobox",
+                                     fieldbackground=ModernTheme.GRAY_50,
+                                     background=ModernTheme.WHITE,
+                                     borderwidth=1,
+                                     relief="solid")
+                
+                combo = ttk.Combobox(picker_container, textvariable=var, values=values, 
+                                   state="readonly", font=ModernTheme.FONT_PRIMARY,
+                                   style="Modern.TCombobox", height=6)
+                combo.pack(fill=tk.X, ipady=8)
+                
+                # Color indicator frame
+                indicator_frame = tk.Frame(picker_container, bg=ModernTheme.WHITE, height=4)
+                indicator_frame.pack(fill=tk.X, pady=(2, 0))
+                
+                color_indicator = tk.Frame(indicator_frame, height=3, bg=ModernTheme.GRAY_200)
+                color_indicator.pack(fill=tk.X)
+                
+                # Update color indicator when selection changes
+                def update_color_indicator(event=None):
+                    selected_value = var.get()
+                    if field_name == "report_type" and selected_value in type_colors:
+                        color_indicator.configure(bg=type_colors[selected_value])
+                    elif field_name == "status" and selected_value in status_colors:
+                        color_indicator.configure(bg=status_colors[selected_value])
+                    else:
+                        color_indicator.configure(bg=ModernTheme.GRAY_200)
+                
+                combo.bind('<<ComboboxSelected>>', update_color_indicator)
+                var.trace('w', lambda *args: update_color_indicator())
                 
                 # Set initial value if report_data exists
                 if report_data and field_name in report_data:
                     initial_value = report_data[field_name]
                     print(f"🔍 Debug - Setting {field_name} to: {initial_value}")
-                    if initial_value in values:
-                        combo.set(initial_value)
-                        var.set(initial_value)
+                    
+                    # Map plain text to emoji versions
+                    value_mapping = {}
+                    if field_name == "report_type":
+                        value_mapping = {
+                            "Báo cáo tháng": "📅 Báo cáo tháng", "monthly": "📅 Báo cáo tháng",
+                            "Báo cáo quý": "📈 Báo cáo quý", "quarterly": "📈 Báo cáo quý",
+                            "Báo cáo năm": "📋 Báo cáo năm", "annual": "📋 Báo cáo năm",
+                            "Báo cáo đặc biệt": "⭐ Báo cáo đặc biệt", "special": "⭐ Báo cáo đặc biệt"
+                        }
+                    else:  # status
+                        value_mapping = {
+                            "Nháp": "📝 Nháp", "draft": "📝 Nháp",
+                            "Đã nộp": "📤 Đã nộp", "submitted": "📤 Đã nộp",
+                            "Đã duyệt": "✅ Đã duyệt", "approved": "✅ Đã duyệt",
+                            "Từ chối": "❌ Từ chối", "rejected": "❌ Từ chối"
+                        }
+                    
+                    # Find matching value
+                    display_value = value_mapping.get(initial_value, initial_value)
+                    if display_value in values:
+                        combo.set(display_value)
+                        var.set(display_value)
+                        update_color_indicator()
                     else:
-                        print(f"⚠️ Warning - Value '{initial_value}' not found in {values}")
-                        # Try to find partial match
-                        for value in values:
-                            if initial_value.lower() in value.lower() or value.lower() in initial_value.lower():
-                                combo.set(value)
-                                var.set(value)
-                                print(f"✅ Found partial match: {value}")
+                        # Try partial match
+                        for key, val in value_mapping.items():
+                            if initial_value.lower() in key.lower() or key.lower() in initial_value.lower():
+                                combo.set(val)
+                                var.set(val)
+                                update_color_indicator()
+                                print(f"✅ Found partial match: {val}")
                                 break
                 
                 variables[field_name] = var
                 
             elif field_type == "text":
-                # Text area
-                text_frame = tk.Frame(field_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
-                text_frame.pack(fill=tk.X, pady=(4, 0))
+                # Enhanced text area with better styling
+                text_container = tk.Frame(field_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                text_container.pack(fill=tk.X, pady=(4, 0))
                 
-                text_widget = tk.Text(text_frame, height=6, 
+                # Text widget with scrollbar
+                text_frame = tk.Frame(text_container, bg=ModernTheme.GRAY_50)
+                text_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+                
+                text_widget = tk.Text(text_frame, height=8, 
                                     font=ModernTheme.FONT_PRIMARY,
                                     bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
-                                    relief=tk.FLAT, bd=5, wrap=tk.WORD)
-                text_widget.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+                                    relief=tk.FLAT, bd=0, wrap=tk.WORD,
+                                    selectbackground=ModernTheme.PRIMARY,
+                                    selectforeground=ModernTheme.WHITE)
+                
+                # Add scrollbar for text areas
+                scrollbar_text = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text_widget.yview)
+                text_widget.configure(yscrollcommand=scrollbar_text.set)
+                
+                text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                scrollbar_text.pack(side=tk.RIGHT, fill=tk.Y)
+                
+                # Focus effects for text area
+                def on_text_focus_in(event):
+                    text_container.configure(bg=ModernTheme.PRIMARY, relief=tk.SOLID, bd=1)
+                    
+                def on_text_focus_out(event):
+                    text_container.configure(bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                
+                text_widget.bind('<FocusIn>', on_text_focus_in)
+                text_widget.bind('<FocusOut>', on_text_focus_out)
+                
+                # Add character counter and word counter for content
+                if field_name == "content":
+                    count_frame = tk.Frame(field_frame, bg=ModernTheme.WHITE)
+                    count_frame.pack(fill=tk.X, pady=(2, 0))
+                    
+                    word_count_label = tk.Label(count_frame, text="0 từ", 
+                                              font=('Segoe UI', 8), 
+                                              bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    word_count_label.pack(side=tk.LEFT)
+                    
+                    char_count_label = tk.Label(count_frame, text="0 ký tự", 
+                                              font=('Segoe UI', 8), 
+                                              bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    char_count_label.pack(side=tk.RIGHT)
+                    
+                    def update_counts(*args):
+                        content = text_widget.get("1.0", tk.END).strip()
+                        char_count = len(content)
+                        word_count = len(content.split()) if content else 0
+                        char_count_label.configure(text=f"{char_count} ký tự")
+                        word_count_label.configure(text=f"{word_count} từ")
+                    
+                    # Bind to text changes
+                    def on_text_change(event):
+                        text_widget.after_idle(update_counts)
+                    
+                    text_widget.bind('<KeyRelease>', on_text_change)
+                    text_widget.bind('<Button-1>', on_text_change)
+                    text_widget.bind('<Control-v>', on_text_change)  # Paste
+                    
+                    # Quick format buttons for report content
+                    format_frame = tk.Frame(count_frame, bg=ModernTheme.WHITE)
+                    format_frame.pack(side=tk.LEFT, padx=(20, 0))
+                    
+                    def insert_template(template_type):
+                        templates = {
+                            "summary": "\n--- TÓM TẮT THỰC HIỆN ---\n\n",
+                            "detail": "\n--- CHI TIẾT CÔNG VIỆC ---\n\n",
+                            "issues": "\n--- VẤN ĐỀ GẶP PHẢI ---\n\n",
+                            "next": "\n--- KẾ HOẠCH TIẾP THEO ---\n\n"
+                        }
+                        template = templates.get(template_type, "")
+                        text_widget.insert(tk.INSERT, template)
+                        update_counts()
+                    
+                    format_buttons = [
+                        ("📋 Tóm tắt", "summary"),
+                        ("📝 Chi tiết", "detail"),
+                        ("⚠️ Vấn đề", "issues"),
+                        ("🎯 Kế hoạch", "next")
+                    ]
+                    
+                    for btn_text, template_type in format_buttons:
+                        format_btn = tk.Button(format_frame, text=btn_text,
+                                             font=('Segoe UI', 8),
+                                             bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
+                                             border=0, cursor="hand2", padx=6, pady=2,
+                                             command=lambda t=template_type: insert_template(t))
+                        format_btn.pack(side=tk.LEFT, padx=(2, 0))
+                
+                # Add field-specific hints
+                if field_name == "content":
+                    hint_label = tk.Label(field_frame, text="💡 Nội dung chi tiết của báo cáo - sử dụng các mẫu phía trên để định dạng", 
+                                        font=('Segoe UI', 9), 
+                                        bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    hint_label.pack(anchor=tk.W, pady=(2, 0))
                 
                 if report_data and field_name in report_data:
                     text_widget.insert(tk.END, str(report_data[field_name]))
+                    if field_name == "content":
+                        update_counts()
                 
                 variables[field_name] = text_widget  # Store widget instead of StringVar
                 
             else:  # entry
                 var = tk.StringVar()
-                entry = tk.Entry(field_frame, textvariable=var, 
+                
+                # Enhanced entry field with better styling
+                entry_container = tk.Frame(field_frame, bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                entry_container.pack(fill=tk.X, pady=(4, 0))
+                
+                entry = tk.Entry(entry_container, textvariable=var, 
                                font=ModernTheme.FONT_PRIMARY,
                                bg=ModernTheme.GRAY_50, fg=ModernTheme.GRAY_900,
-                               relief=tk.FLAT, bd=5)
-                entry.pack(fill=tk.X, pady=(4, 0))
+                               relief=tk.FLAT, bd=0)
+                entry.pack(fill=tk.X, padx=10, pady=8)
+                
+                # Add placeholder text and focus effects
+                def on_focus_in(event):
+                    entry_container.configure(bg=ModernTheme.PRIMARY, relief=tk.SOLID, bd=1)
+                    
+                def on_focus_out(event):
+                    entry_container.configure(bg=ModernTheme.GRAY_50, relief=tk.FLAT, bd=1)
+                
+                entry.bind('<FocusIn>', on_focus_in)
+                entry.bind('<FocusOut>', on_focus_out)
+                
+                # Add field-specific hints and quick buttons
+                if field_name == "title":
+                    hint_label = tk.Label(field_frame, text="💡 Tiêu đề ngắn gọn và rõ ràng cho báo cáo", 
+                                        font=('Segoe UI', 9), 
+                                        bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    hint_label.pack(anchor=tk.W, pady=(2, 0))
+                elif field_name == "period":
+                    hint_frame = tk.Frame(field_frame, bg=ModernTheme.WHITE)
+                    hint_frame.pack(fill=tk.X, pady=(2, 0))
+                    
+                    hint_label = tk.Label(hint_frame, text="💡 Kỳ báo cáo (ví dụ: Tháng 12/2024, Quý 4/2024)", 
+                                        font=('Segoe UI', 9), 
+                                        bg=ModernTheme.WHITE, fg=ModernTheme.GRAY_500)
+                    hint_label.pack(side=tk.LEFT)
+                    
+                    # Quick period buttons
+                    quick_periods_frame = tk.Frame(hint_frame, bg=ModernTheme.WHITE)
+                    quick_periods_frame.pack(side=tk.RIGHT)
+                    
+                    def set_current_period(period_type):
+                        import datetime
+                        now = datetime.datetime.now()
+                        if period_type == "month":
+                            period = f"Tháng {now.month:02d}/{now.year}"
+                        elif period_type == "quarter":
+                            quarter = (now.month - 1) // 3 + 1
+                            period = f"Quý {quarter}/{now.year}"
+                        elif period_type == "year":
+                            period = f"Năm {now.year}"
+                        var.set(period)
+                    
+                    # Quick period buttons
+                    period_buttons = [
+                        ("Tháng này", "month"),
+                        ("Quý này", "quarter"),
+                        ("Năm này", "year")
+                    ]
+                    
+                    for btn_text, period_type in period_buttons:
+                        period_btn = tk.Button(quick_periods_frame, text=btn_text,
+                                             font=('Segoe UI', 8),
+                                             bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
+                                             border=0, cursor="hand2", padx=6, pady=2,
+                                             command=lambda p=period_type: set_current_period(p))
+                        period_btn.pack(side=tk.LEFT, padx=(2, 0))
                 
                 if report_data and field_name in report_data:
                     entry.insert(0, str(report_data[field_name]))
@@ -290,14 +510,34 @@ class ReportForm:
             errors = []
             
             # Check required fields
-            if not variables['title'].get().strip():
-                errors.append("Tiêu đề báo cáo không được để trống")
-            if not variables['report_type'].get():
-                errors.append("Vui lòng chọn loại báo cáo")
-            if not variables['period'].get().strip():
-                errors.append("Kỳ báo cáo không được để trống")
-            if not variables['status'].get():
-                errors.append("Vui lòng chọn trạng thái")
+            title_value = variables['title'].get().strip() if variables['title'].get() else ""
+            if not title_value:
+                errors.append("❌ Tiêu đề báo cáo không được để trống")
+            
+            report_type_value = variables['report_type'].get()
+            if not report_type_value:
+                errors.append("❌ Vui lòng chọn loại báo cáo")
+            
+            period_value = variables['period'].get().strip() if variables['period'].get() else ""
+            if not period_value:
+                errors.append("❌ Kỳ báo cáo không được để trống")
+            
+            status_value = variables['status'].get()
+            if not status_value:
+                errors.append("❌ Vui lòng chọn trạng thái")
+            
+            # Validate content length
+            content_value = variables['content'].get("1.0", tk.END).strip() if isinstance(variables['content'], tk.Text) else ""
+            if len(content_value) < 10:
+                errors.append("❌ Nội dung báo cáo phải có ít nhất 10 ký tự")
+            
+            # Validate title length
+            if len(title_value) > 150:
+                errors.append("❌ Tiêu đề không được vượt quá 150 ký tự")
+            
+            # Validate period format (basic check)
+            if period_value and not any(keyword in period_value.lower() for keyword in ['tháng', 'quý', 'năm']):
+                errors.append("❌ Kỳ báo cáo nên bao gồm 'Tháng', 'Quý' hoặc 'Năm'")
             
             return errors
         
@@ -308,7 +548,8 @@ class ReportForm:
             errors = validate_form()
             if errors:
                 from tkinter import messagebox
-                messagebox.showerror("Lỗi", "\n".join(errors))
+                error_message = "Vui lòng kiểm tra lại các thông tin sau:\n\n" + "\n".join(errors)
+                messagebox.showerror("⚠️ Lỗi nhập liệu", error_message)
                 return
             
             # Collect form data
@@ -316,7 +557,26 @@ class ReportForm:
                 if isinstance(var, tk.Text):
                     result[field_name] = var.get("1.0", tk.END).strip()
                 else:
-                    result[field_name] = var.get()
+                    value = var.get()
+                    # Convert emoji values back to plain text for database storage
+                    if field_name == "report_type":
+                        type_reverse_mapping = {
+                            "📅 Báo cáo tháng": "Báo cáo tháng",
+                            "📈 Báo cáo quý": "Báo cáo quý",
+                            "📋 Báo cáo năm": "Báo cáo năm",
+                            "⭐ Báo cáo đặc biệt": "Báo cáo đặc biệt"
+                        }
+                        result[field_name] = type_reverse_mapping.get(value, value)
+                    elif field_name == "status":
+                        status_reverse_mapping = {
+                            "📝 Nháp": "Nháp",
+                            "📤 Đã nộp": "Đã nộp",
+                            "✅ Đã duyệt": "Đã duyệt",
+                            "❌ Từ chối": "Từ chối"
+                        }
+                        result[field_name] = status_reverse_mapping.get(value, value)
+                    else:
+                        result[field_name] = value
             is_saved = True
             dialog.destroy()
         
@@ -326,25 +586,45 @@ class ReportForm:
             is_saved = False
             dialog.destroy()
         
-        # Create buttons with better styling and spacing
+        # Create buttons with enhanced styling and spacing
         button_container = tk.Frame(button_frame, bg=ModernTheme.WHITE)
         button_container.pack(expand=True, fill=tk.BOTH)
         
-        cancel_btn = tk.Button(button_container, text="Hủy", 
+        # Enhanced cancel button
+        cancel_btn = tk.Button(button_container, text="❌ Hủy bỏ", 
                               font=ModernTheme.FONT_PRIMARY,
                               bg=ModernTheme.GRAY_100, fg=ModernTheme.GRAY_700,
-                              border=0, cursor="hand2", padx=30, pady=10,
+                              border=0, cursor="hand2", padx=25, pady=12,
                               command=on_cancel)
         cancel_btn.pack(side=tk.RIGHT, padx=(ModernTheme.PADDING_SMALL, ModernTheme.PADDING_MEDIUM), 
                        pady=ModernTheme.PADDING_SMALL)
         
-        save_btn = tk.Button(button_container, text="Lưu", 
+        # Enhanced save button
+        save_btn = tk.Button(button_container, text="💾 Lưu báo cáo", 
                             font=ModernTheme.FONT_PRIMARY,
                             bg=ModernTheme.PRIMARY, fg=ModernTheme.WHITE,
-                            border=0, cursor="hand2", padx=30, pady=10,
+                            border=0, cursor="hand2", padx=25, pady=12,
                             command=on_save)
         save_btn.pack(side=tk.RIGHT, padx=(0, ModernTheme.PADDING_SMALL), 
                      pady=ModernTheme.PADDING_SMALL)
+        
+        # Button hover effects
+        def on_save_hover_enter(event):
+            save_btn.configure(bg=ModernTheme.PRIMARY_DARK)
+        
+        def on_save_hover_leave(event):
+            save_btn.configure(bg=ModernTheme.PRIMARY)
+            
+        def on_cancel_hover_enter(event):
+            cancel_btn.configure(bg=ModernTheme.GRAY_200)
+        
+        def on_cancel_hover_leave(event):
+            cancel_btn.configure(bg=ModernTheme.GRAY_100)
+        
+        save_btn.bind('<Enter>', on_save_hover_enter)
+        save_btn.bind('<Leave>', on_save_hover_leave)
+        cancel_btn.bind('<Enter>', on_cancel_hover_enter)
+        cancel_btn.bind('<Leave>', on_cancel_hover_leave)
         
         # Keyboard shortcuts
         dialog.bind('<Control-s>', lambda e: on_save())  # Ctrl+S to save
