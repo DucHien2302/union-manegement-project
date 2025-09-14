@@ -27,6 +27,9 @@ from presentation.gui.member_components import MemberTab, MemberActions, MemberF
 from presentation.gui.report_components import ReportTab, ReportActions, ReportForm
 from presentation.gui.task_components import TaskTab, TaskActions, TaskForm
 
+# Import controllers
+from presentation.controllers.report_controller import ReportController
+
 
 class MainApplication:
     """Ứng dụng chính với giao diện hiện đại và kiến trúc modular"""
@@ -50,6 +53,9 @@ class MainApplication:
         
         # Khởi tạo use cases
         self._init_use_cases()
+        
+        # Khởi tạo controllers
+        self._init_controllers()
         
         # Storage for components
         self.dashboard_cards = {}
@@ -103,6 +109,14 @@ class MainApplication:
             
         except Exception as e:
             messagebox.showerror("Lỗi", f"Không thể kết nối database: {e}")
+            self.root.destroy()
+    
+    def _init_controllers(self):
+        """Khởi tạo các controllers"""
+        try:
+            self.report_controller = ReportController()
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể khởi tạo controllers: {e}")
             self.root.destroy()
     
     def _create_widgets(self):
@@ -299,7 +313,7 @@ class MainApplication:
         """Làm mới danh sách báo cáo"""
         try:
             print("🔄 Loading reports...")
-            self.all_reports = self.report_use_case.get_all_reports()
+            self.all_reports = self.report_controller.get_all_reports()
             print(f"📊 Found {len(self.all_reports)} reports")
             ReportActions.populate_report_tree(self.report_tree, self.all_reports)
             print("✅ Report tree populated")
@@ -409,10 +423,10 @@ class MainApplication:
         result = ReportForm.create_report_form_dialog(self.root, "Tạo báo cáo mới")
         if result:
             try:
-                # TODO: Implement actual report creation
-                messagebox.showinfo("Thành công", "Tạo báo cáo thành công!")
-                self._refresh_reports()
-                self._refresh_dashboard()
+                success = self.report_controller.create_report(result)
+                if success:
+                    self._refresh_reports()
+                    self._refresh_dashboard()
             except Exception as e:
                 messagebox.showerror("Lỗi", f"Không thể tạo báo cáo: {e}")
     
@@ -423,7 +437,27 @@ class MainApplication:
             messagebox.showwarning("Cảnh báo", "Vui lòng chọn báo cáo cần sửa!")
             return
         
-        messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
+        try:
+            # Lấy thông tin báo cáo hiện tại
+            report = self.report_controller.get_report_by_id(report_id)
+            if not report:
+                messagebox.showerror("Lỗi", "Không tìm thấy báo cáo!")
+                return
+            
+            # Chuyển đổi dữ liệu để hiển thị
+            display_data = self.report_controller.format_report_data_for_display(report)
+            
+            # Hiển thị form sửa
+            result = ReportForm.create_report_form_dialog(
+                self.root, "Chỉnh sửa báo cáo", display_data)
+            
+            if result:
+                success = self.report_controller.update_report(report_id, result)
+                if success:
+                    self._refresh_reports()
+                    self._refresh_dashboard()
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể sửa báo cáo: {e}")
     
     def _approve_report(self):
         """Duyệt báo cáo"""
@@ -432,7 +466,16 @@ class MainApplication:
             messagebox.showwarning("Cảnh báo", "Vui lòng chọn báo cáo cần duyệt!")
             return
         
-        messagebox.showinfo("Thông báo", "Chức năng đang được phát triển")
+        try:
+            # TODO: Lấy user ID từ session thực tế
+            approved_by_id = 1  # Temporary user ID
+            
+            success = self.report_controller.approve_report(report_id, approved_by_id)
+            if success:
+                self._refresh_reports()
+                self._refresh_dashboard()
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể duyệt báo cáo: {e}")
     
     def _filter_reports(self, event=None):
         """Lọc báo cáo theo trạng thái"""

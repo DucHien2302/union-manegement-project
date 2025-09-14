@@ -19,8 +19,7 @@ class ReportManagementUseCase:
             content=report_data.get('content', ''),
             attachments=report_data.get('attachments', ''),
             status=ReportStatus.DRAFT,
-            submitted_by=report_data.get('submitted_by'),
-            notes=report_data.get('notes', '')
+            submitted_by=report_data.get('submitted_by')
         )
         
         return self.report_repository.create(report)
